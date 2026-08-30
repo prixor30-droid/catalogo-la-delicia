@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Delicia · Catálogo</title>
+<meta name="description" content="Catálogo de sabores de La Delicia — papas fritas artesanales.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#111011;
+    --bg-soft:#191716;
+    --card:#1c1a18;
+    --line:#2c2825;
+    --gold:#f4b13d;
+    --gold-2:#ffd27a;
+    --gold-dim:#8a5a17;
+    --pink:#ff3f7e;
+    --text:#f7f1e6;
+    --text-dim:#b7ac9c;
+    --shadow:rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1100px 520px at 50% -8%, rgba(244,177,61,.14), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Poppins',system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px;}
+
+  /* ---------- header ---------- */
+  header{
+    padding:34px 0 18px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .brand{
+    font-family:'Anton',sans-serif;
+    font-weight:400;
+    letter-spacing:.03em;
+    font-size:clamp(30px,5vw,42px);
+    color:var(--text);
+    text-transform:uppercase;
+    display:flex; align-items:baseline; gap:.35em;
+  }
+  .brand span{color:var(--gold);}
+
+  /* ---------- hero ---------- */
+  .hero{
+    text-align:center;
+    padding:34px 0 46px;
+    position:relative;
+  }
+  @keyframes riseIn{
+    0%{opacity:0; transform:translateY(52px) scale(.82);}
+    70%{opacity:1; transform:translateY(-6px) scale(1.03);}
+    100%{opacity:1; transform:translateY(0) scale(1);}
+  }
+  .hero__eyebrow{
+    font-weight:700;
+    letter-spacing:.32em;
+    text-transform:uppercase;
+    font-size:12.5px;
+    color:var(--pink);
+    margin-bottom:14px;
+    opacity:0;
+    animation:riseIn .7s cubic-bezier(.16,1,.3,1) .05s forwards;
+  }
+  .hero h1{
+    font-family:'Anton',sans-serif;
+    font-weight:400;
+    text-transform:uppercase;
+    line-height:.96;
+    letter-spacing:.01em;
+    font-size:clamp(40px,8.5vw,88px);
+    margin:0;
+    background:linear-gradient(180deg,var(--gold-2) 0%, var(--gold) 55%, var(--gold-dim) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    filter:drop-shadow(0 10px 30px rgba(244,177,61,.18));
+    opacity:0;
+    animation:riseIn .85s cubic-bezier(.16,1,.3,1) .16s forwards;
+  }
+  .hero p{
+    max-width:520px;margin:18px auto 0;
+    color:var(--text-dim);
+    font-size:15.5px;
+    line-height:1.6;
+    opacity:0;
+    animation:riseIn .8s cubic-bezier(.16,1,.3,1) .34s forwards;
+  }
+
+  /* ---------- grid ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:26px 22px;
+    padding:10px 0 60px;
+  }
+  @media (max-width:980px){ .grid{grid-template-columns:repeat(3,1fr);} }
+  @media (max-width:680px){ .grid{grid-template-columns:repeat(2,1fr); gap:18px 12px;} }
+  @media (max-width:400px){ .grid{gap:14px 10px;} }
+
+  .card{
+    position:relative;
+    padding:26px 14px 20px;
+    display:flex;flex-direction:column;align-items:center;
+    opacity:0; transform:translateY(110px) scale(.68) rotate(-10deg);
+    transition:opacity .9s cubic-bezier(.34,1.56,.64,1), transform .9s cubic-bezier(.34,1.56,.64,1), z-index 0s;
+    z-index:1;
+  }
+  .card:nth-child(even){ transform:translateY(110px) scale(.68) rotate(10deg); }
+  .card.in{opacity:1; transform:translateY(0) scale(1) rotate(0);}
+  .card:hover{
+    transform:translateY(-20px) scale(1.07);
+    z-index:5;
+  }
+  .card__bg{
+    position:absolute; inset:0;
+    overflow:hidden;
+    z-index:0;
+  }
+
+  @keyframes glowPulse{
+    0%,100%{ opacity:.42; transform:translateX(-50%) scale(1); }
+    50%{ opacity:.8; transform:translateX(-50%) scale(1.14); }
+  }
+  .spot{
+    position:absolute;
+    top:14%;
+    left:50%;
+    width:150%;
+    aspect-ratio:1.15/1;
+    transform:translateX(-50%);
+    background:radial-gradient(closest-side, var(--spot-c1,#f4b13d) 0%, var(--spot-c2,#c9781f) 46%, transparent 72%);
+    opacity:.55;
+    filter:blur(1px);
+    pointer-events:none;
+    z-index:0;
+    animation:glowPulse 2.2s ease-in-out infinite;
+    transition:opacity .35s ease;
+  }
+  .card:hover .spot{ opacity:1; animation-play-state:paused; transform:translateX(-50%) scale(1.32); }
+  .card::after{
+    content:"";
+    position:absolute; inset:0;
+    border-radius:20px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+    pointer-events:none;
+  }
+
+  .photo{
+    position:relative; z-index:1;
+    width:100%;
+    aspect-ratio:3/3.7;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .photo img{
+    max-width:100%; max-height:100%;
+    width:auto; height:auto;
+    object-fit:contain;
+    filter:drop-shadow(0 18px 22px rgba(0,0,0,.55));
+    transition:transform .45s cubic-bezier(.34,1.56,.64,1);
+  }
+  .card:hover .photo img{transform:scale(1.2) rotate(-6deg);}
+
+  .name{
+    position:relative; z-index:1;
+    font-family:'Anton',sans-serif;
+    font-weight:400;
+    text-transform:uppercase;
+    letter-spacing:.01em;
+    font-size:16.5px;
+    line-height:1.12;
+    text-align:center;
+    margin-top:10px;
+    min-height:2.3em;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .price{
+    position:relative; z-index:1;
+    margin-top:10px;
+    font-weight:700;
+    font-size:14.5px;
+    color:#1a1410;
+    background:linear-gradient(180deg,var(--gold-2),var(--gold));
+    padding:6px 16px;
+    border-radius:999px;
+    letter-spacing:.02em;
+    box-shadow:0 6px 16px rgba(244,177,61,.28);
+  }
+  .tag{
+    position:absolute; z-index:2;
+    top:14px; right:14px;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--pink);
+    background:rgba(255,63,126,.12);
+    border:1px solid rgba(255,63,126,.35);
+    padding:3px 9px;
+    border-radius:999px;
+  }
+
+  /* ---------- footer ---------- */
+  footer{
+    border-top:1px solid var(--line);
+    padding:26px 0 34px;
+    text-align:center;
+    color:var(--text-dim);
+    font-size:12.5px;
+    line-height:1.9;
+  }
+  footer b{color:var(--text);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">LA <span>DELICIA</span></div>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="hero__eyebrow">Catálogo de sabores</div>
+    <h1>Sabor que te<br>hace feliz</h1>
+    <p>Papas fritas artesanales, hechas con receta propia. Estos son todos nuestros sabores disponibles.</p>
+  </section>
+
+  <section class="grid" id="grid">
+
+    <article class="card" style="--spot-c1:#ffb0cf;--spot-c2:#e8447f;">
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="bbq.webp" type="image/webp">
+        <img src="bbq.png" alt="La Delicia BBQ Dulce" loading="lazy">
+      </picture></div>
+      <div class="name">BBQ</div>
+      <div class="price">$9.000</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#b7e08a;--spot-c2:#4f8a2e;">
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="limon.webp" type="image/webp">
+        <img src="limon.png" alt="La Delicia Limón" loading="lazy">
+      </picture></div>
+      <div class="name">Limón</div>
+      <div class="price">$9.000</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#ffe98a;--spot-c2:#e0a615;">
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="carita-feliz.webp" type="image/webp">
+        <img src="carita-feliz.png" alt="La Delicia Carita Feliz" loading="lazy">
+      </picture></div>
+      <div class="name">Carita Feliz</div>
+      <div class="price">$9.000</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#ffe27a;--spot-c2:#d69a12;">
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="pollo.webp" type="image/webp">
+        <img src="pollo.png" alt="La Delicia Pollo" loading="lazy">
+      </picture></div>
+      <div class="name">Pollo</div>
+      <div class="price">$9.000</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#d9a9ff;--spot-c2:#7a2fae;">
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="parrillada.webp" type="image/webp">
+        <img src="parrillada.png" alt="La Delicia Parrillada" loading="lazy">
+      </picture></div>
+      <div class="name">Parrillada</div>
+      <div class="price">$9.000</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#c7e08a;--spot-c2:#7a9a1f;">
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="chorizo-limon.webp" type="image/webp">
+        <img src="chorizo-limon.png" alt="La Delicia Chorizo Limón" loading="lazy">
+      </picture></div>
+      <div class="name">Chorizo Limón</div>
+      <div class="price">$9.000</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#9fd4ff;--spot-c2:#1f6fb8;">
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="mayonesa.webp" type="image/webp">
+        <img src="mayonesa.png" alt="La Delicia Mayonesa" loading="lazy">
+      </picture></div>
+      <div class="name">Mayonesa</div>
+      <div class="price">$9.000</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#ffb977;--spot-c2:#c05a12;">
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="queso.webp" type="image/webp">
+        <img src="queso.png" alt="La Delicia Queso Cheddar" loading="lazy">
+      </picture></div>
+      <div class="name">Queso Cheddar</div>
+      <div class="price">$9.000</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#ffe27a;--spot-c2:#d69a12;">
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="almuerzo-pollo.webp" type="image/webp">
+        <img src="almuerzo-pollo.png" alt="La Delicia Almuercito Pollo" loading="lazy">
+      </picture></div>
+      <div class="name">Almuercito Pollo</div>
+      <div class="price">$9.000</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#c7e08a;--spot-c2:#5a8a1f;">
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="almuerzo-limon.webp" type="image/webp">
+        <img src="almuerzo-limon.png" alt="La Delicia Almuercito Limón" loading="lazy">
+      </picture></div>
+      <div class="name">Almuercito Limón</div>
+      <div class="price">$9.000</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#ff9fae;--spot-c2:#c21f3a;">
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="almuerzo-picante.webp" type="image/webp">
+        <img src="almuerzo-picante.png" alt="La Delicia Almuercito Picante" loading="lazy">
+      </picture></div>
+      <div class="name">Almuercito Picante</div>
+      <div class="price">$9.000</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#ffe9a8;--spot-c2:#d69a12;">
+      <div class="tag">Económico</div>
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="mega.webp" type="image/webp">
+        <img src="mega.png" alt="La Delicia Mega" loading="lazy">
+      </picture></div>
+      <div class="name">Mega</div>
+      <div class="price">$1.700</div>
+    </article>
+
+    <article class="card" style="--spot-c1:#ffe27a;--spot-c2:#d68a12;">
+      <div class="tag">Familiar</div>
+      <div class="card__bg"><div class="spot"></div></div>
+      <div class="photo"><picture>
+        <source srcset="megaton.webp" type="image/webp">
+        <img src="megaton.png" alt="La Delicia Megatón Familiar" loading="lazy">
+      </picture></div>
+      <div class="name">Megatón Familiar</div>
+      <div class="price">$5.000</div>
+    </article>
+
+  </section>
+</div>
+
+<footer>
+  <div><b>La Delicia</b> — Papas fritas artesanales</div>
+  <div>Precios sujetos a cambio sin previo aviso.</div>
+</footer>
+
+<script>
+  var cards = document.querySelectorAll('.card');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting) {
+          var idx = Array.prototype.indexOf.call(cards, e.target);
+          setTimeout(function(){ e.target.classList.add('in'); }, (idx % 4) * 150);
+          io.unobserve(e.target);
+        }
+      });
+    }, {threshold:.12, rootMargin:'0px 0px -60px 0px'});
+    cards.forEach(function(c){ io.observe(c); });
+  } else {
+    cards.forEach(function(c){ c.classList.add('in'); });
+  }
+</script>
+</body>
+</html>
