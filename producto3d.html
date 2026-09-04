@@ -113,6 +113,18 @@
   .buy:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(244,177,61,.4);}
   .buy:active{transform:translateY(0);}
 
+  /* botón secundario: solo aparece en los sabores que tienen reverso */
+  .flip{
+    font-family:'Poppins',sans-serif;
+    font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text-dim);
+    background:transparent;
+    border:1px solid #3a342d;border-radius:999px;
+    padding:12px 22px;cursor:pointer;
+    transition:color .25s,border-color .25s;
+  }
+  .flip:hover{color:var(--gold);border-color:var(--gold);}
+
   /* fundido del texto al cambiar de sabor */
   .info{transition:opacity .28s ease;}
   .info.swapping{opacity:0;}
@@ -189,6 +201,7 @@
         <div class="buyrow">
           <div class="price" id="p-precio">$9.000</div>
           <button class="buy" id="p-comprar">Comprar</button>
+          <button class="flip" id="p-girar" hidden>Ver reverso</button>
         </div>
       </div>
     </div>
@@ -216,7 +229,7 @@ const PRODUCTOS = [
   {id:'parrillada',       nombre:'Parrillada',         desc:'Notas de carne a la brasa y especias.',           precio:'$9.000', color:0xd9a9ff, badge:''},
   {id:'chorizo-limon',    nombre:'Chorizo Limón',      desc:'Chorizo ahumado rematado con limón.',             precio:'$9.000', color:0xc7e08a, badge:''},
   {id:'mayonesa',         nombre:'Mayonesa',           desc:'Cremosa y suave, con un toque de ajo.',           precio:'$9.000', color:0x9fd4ff, badge:''},
-  {id:'queso',            nombre:'Queso Cheddar',      desc:'Cheddar maduro, intenso y envolvente.',           precio:'$9.000', color:0xffb977, badge:''},
+  {id:'queso',            nombre:'Queso Cheddar',      desc:'Cheddar maduro, intenso y envolvente.',           precio:'$9.000', color:0xffb977, badge:'', reverso:true},
   {id:'almuerzo-pollo',   nombre:'Almuercito Pollo',   desc:'Porción de almuerzo con sazón de pollo.',         precio:'$9.000', color:0xffe27a, badge:''},
   {id:'almuerzo-limon',   nombre:'Almuercito Limón',   desc:'Porción de almuerzo, cítrica y fresca.',          precio:'$9.000', color:0xc7e08a, badge:''},
   {id:'almuerzo-picante', nombre:'Almuercito Picante', desc:'Porción de almuerzo con picante marcado.',        precio:'$9.000', color:0xff9fae, badge:''},
@@ -347,14 +360,25 @@ halo.position.z = 0.45;   // relativo al grupo fondo
 fondo.add(halo);
 
 /* ============================================================
-   6. El producto: plano con el PNG recortado
+   6. El producto: frente y reverso
    La foto ya trae su propia luz, así que va sin sombrear
    (MeshBasicMaterial) para que no se ensucie.
+   Son dos planos espalda contra espalda, no uno solo a doble cara: con
+   DoubleSide el reverso se vería en espejo, con el texto invertido.
    ============================================================ */
-const materialProducto = new THREE.MeshBasicMaterial({
-  transparent: true, opacity: 0, depthWrite: false, toneMapped: false
+const matFrente  = new THREE.MeshBasicMaterial({
+  transparent: true, opacity: 0, depthWrite: false, toneMapped: false,
+  side: THREE.FrontSide
 });
-const producto = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), materialProducto);
+const matReverso = matFrente.clone();
+
+const caraFrente  = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), matFrente);
+const caraReverso = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), matReverso);
+caraReverso.rotation.y = Math.PI;
+caraReverso.visible = false;
+
+const producto = new THREE.Group();
+producto.add(caraFrente, caraReverso);
 producto.scale.set(0.001, 0.001, 1);
 tilt.add(producto);
 
@@ -386,11 +410,13 @@ const el = {
   desc:    document.getElementById('p-desc'),
   precio:  document.getElementById('p-precio'),
   badge:   document.getElementById('p-badge'),
+  girar:   document.getElementById('p-girar'),
   thumbs:  document.getElementById('thumbs')
 };
 
 let indiceActual = -1;
 let opacidadObjetivo = 0;
+let giro = 0, giroObjetivo = 0;   // 0 = frente, PI = reverso
 
 async function seleccionar(i, inmediato = false){
   if (i === indiceActual) return;
@@ -414,20 +440,47 @@ async function seleccionar(i, inmediato = false){
   halo.material.color.setHex(p.color);
   luzContorno.color.setHex(p.color);
 
+  // al cambiar de sabor siempre se vuelve al frente
+  giro = 0; giroObjetivo = 0;
+  producto.rotation.y = 0;
+  el.girar.hidden = !p.reverso;
+  el.girar.textContent = 'Ver reverso';
+
   try {
     const tex = await cargarTextura(p.id);
     if (indiceActual !== i) return;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    materialProducto.map = tex;
-    materialProducto.needsUpdate = true;
+    prepararTextura(tex);
+    matFrente.map = tex;
+    matFrente.needsUpdate = true;
     const img = tex.image;
     producto.scale.set(ALTO * (img.width / img.height), ALTO, 1);
     opacidadObjetivo = 1;
   } catch {
     console.warn('No se pudo cargar la imagen de "' + p.id + '".');
     opacidadObjetivo = 0;
+    return;
   }
+
+  // el reverso se carga aparte: si falla, el frente sigue funcionando
+  caraReverso.visible = false;
+  if (p.reverso){
+    try {
+      const tex = await cargarTextura(p.id + '-reverso');
+      if (indiceActual !== i) return;
+      prepararTextura(tex);
+      matReverso.map = tex;
+      matReverso.needsUpdate = true;
+      caraReverso.visible = true;
+    } catch {
+      console.warn('No se pudo cargar el reverso de "' + p.id + '".');
+      el.girar.hidden = true;
+    }
+  }
+}
+
+function prepararTextura(tex){
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 }
 
 /* miniaturas */
@@ -450,6 +503,12 @@ document.getElementById('p-comprar').addEventListener('click', () => {
   }
   const msg = 'Hola, quiero pedir La Delicia ' + p.nombre + ' (' + p.precio + ').';
   window.open('https://wa.me/' + TELEFONO_WHATSAPP + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+});
+
+el.girar.addEventListener('click', () => {
+  const alReverso = giroObjetivo < 0.1;
+  giroObjetivo = alReverso ? Math.PI : 0;
+  el.girar.textContent = alReverso ? 'Ver frente' : 'Ver reverso';
 });
 
 window.addEventListener('keydown', e => {
@@ -518,7 +577,8 @@ function animar(){
   orbita.x += (orbitaObjetivo.x - orbita.x) * 0.08;
   fondo.rotation.y = orbita.y;
   fondo.rotation.x = orbita.x;
-  producto.rotation.y = orbita.y * 0.4;
+  giro += (giroObjetivo - giro) * 0.09;
+  producto.rotation.y = orbita.y * 0.4 + giro;
   producto.rotation.x = orbita.x * 0.4;
 
   // en pantalla ancha el producto se corre a la derecha para dejar sitio al texto
@@ -526,8 +586,9 @@ function animar(){
   stage.position.x = desplazamientoX;
 
   // fundido al cambiar de sabor
-  materialProducto.opacity += (opacidadObjetivo - materialProducto.opacity) * 0.12;
-  halo.material.opacity = 0.55 * materialProducto.opacity;
+  matFrente.opacity += (opacidadObjetivo - matFrente.opacity) * 0.12;
+  matReverso.opacity = matFrente.opacity;
+  halo.material.opacity = 0.55 * matFrente.opacity;
 
   renderer.render(scene, camera);
 }
