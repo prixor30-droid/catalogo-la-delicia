@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Delicia · Producto 3D</title>
+<meta name="description" content="Vitrina 3D de sabores La Delicia — papas fritas artesanales.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0b0b;
+    --gold:#f4b13d;
+    --gold-2:#ffd27a;
+    --gold-dim:#8a5a17;
+    --pink:#ff3f7e;
+    --text:#f7f1e6;
+    --text-dim:#a99e8f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Poppins',system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+
+  #app{position:fixed;inset:0;}
+  #scene{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;}
+  #scene.dragging{cursor:grabbing;}
+
+  /* La capa flotante no debe robarle el arrastre al canvas:
+     solo los elementos realmente interactivos reactivan el puntero. */
+  .overlay{
+    position:absolute;inset:0;
+    pointer-events:none;
+    display:flex;flex-direction:column;
+    padding:26px clamp(20px,5vw,64px) 20px;
+  }
+  .overlay a,.overlay button,.overlay .thumbs{pointer-events:auto;}
+
+  /* ---------- barra superior ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex:0 0 auto;}
+  .brand{
+    font-family:'Anton',sans-serif;
+    letter-spacing:.03em;
+    font-size:clamp(19px,2.4vw,25px);
+    text-transform:uppercase;
+    line-height:1;
+  }
+  .brand span{color:var(--gold);}
+  .topbar a{
+    color:var(--text-dim);text-decoration:none;
+    font-size:12px;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;
+    border-bottom:1px solid transparent;
+    transition:color .25s,border-color .25s;
+    white-space:nowrap;
+  }
+  .topbar a:hover{color:var(--gold);border-color:var(--gold);}
+
+  /* ---------- ficha del producto ---------- */
+  .middle{flex:1 1 auto;display:flex;align-items:center;min-height:0;}
+  .info{max-width:390px;}
+  .eyebrow{
+    display:flex;align-items:center;gap:10px;
+    font-weight:700;letter-spacing:.3em;text-transform:uppercase;
+    font-size:11px;color:var(--pink);margin-bottom:14px;
+  }
+  .badge{
+    font-size:10px;letter-spacing:.08em;
+    padding:3px 9px;border-radius:999px;
+    color:var(--pink);
+    background:rgba(255,63,126,.12);
+    border:1px solid rgba(255,63,126,.35);
+  }
+  .badge:empty{display:none;}
+  .info h1{
+    font-family:'Anton',sans-serif;font-weight:400;
+    text-transform:uppercase;line-height:.94;letter-spacing:.01em;
+    font-size:clamp(38px,6.5vw,68px);
+    /* El degradado se recorta al texto, así que la caja debe sobresalir por
+       arriba: si no, las tildes (LIMÓN) caen fuera y quedan invisibles. */
+    margin:-.16em 0 0;
+    padding-top:.16em;
+    background:linear-gradient(180deg,var(--gold-2) 0%,var(--gold) 55%,var(--gold-dim) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 10px 30px rgba(244,177,61,.18));
+  }
+  .info p{
+    color:var(--text-dim);
+    font-size:15px;line-height:1.65;
+    margin:16px 0 0;
+  }
+  .buyrow{display:flex;align-items:center;gap:18px;margin-top:26px;flex-wrap:wrap;}
+  .price{
+    font-family:'Anton',sans-serif;
+    font-size:30px;letter-spacing:.02em;color:var(--text);
+  }
+  .buy{
+    font-family:'Poppins',sans-serif;
+    font-weight:700;font-size:13.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:#1a1410;
+    background:linear-gradient(180deg,var(--gold-2),var(--gold));
+    border:0;border-radius:999px;
+    padding:13px 30px;cursor:pointer;
+    box-shadow:0 8px 24px rgba(244,177,61,.28);
+    transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s;
+  }
+  .buy:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(244,177,61,.4);}
+  .buy:active{transform:translateY(0);}
+
+  /* fundido del texto al cambiar de sabor */
+  .info{transition:opacity .28s ease;}
+  .info.swapping{opacity:0;}
+
+  /* ---------- selector de sabores ---------- */
+  .thumbs{
+    flex:0 0 auto;
+    display:flex;gap:10px;
+    overflow-x:auto;overflow-y:hidden;
+    padding:10px 2px 4px;
+    scrollbar-width:thin;
+    scrollbar-color:#2c2825 transparent;
+  }
+  .thumbs::-webkit-scrollbar{height:5px;}
+  .thumbs::-webkit-scrollbar-thumb{background:#2c2825;border-radius:99px;}
+  .thumb{
+    flex:0 0 auto;
+    width:62px;height:62px;
+    display:grid;place-items:center;
+    background:rgba(255,255,255,.03);
+    border:1px solid #2c2825;border-radius:14px;
+    cursor:pointer;padding:6px;
+    transition:border-color .25s,background .25s,transform .25s;
+  }
+  .thumb img{max-width:100%;max-height:100%;object-fit:contain;display:block;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,.6));}
+  .thumb:hover{transform:translateY(-3px);border-color:#4a4038;}
+  .thumb[aria-current="true"]{
+    border-color:var(--gold);
+    background:rgba(244,177,61,.1);
+  }
+  .hint{
+    flex:0 0 auto;
+    font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:#6d6558;margin-top:10px;
+  }
+
+  /* ---------- móvil: la ficha baja para no tapar el producto ---------- */
+  @media (max-width:900px){
+    .overlay{padding:20px 20px 16px;}
+    .middle{align-items:flex-end;padding-bottom:6px;}
+    .info{max-width:none;}
+    .info p{display:none;}
+    .buyrow{margin-top:18px;gap:14px;}
+    .thumb{width:52px;height:52px;}
+    .hint{display:none;}
+  }
+
+  #fallback{
+    position:absolute;inset:0;display:none;
+    place-items:center;text-align:center;padding:30px;
+    color:var(--text-dim);font-size:14px;line-height:1.7;
+  }
+  #fallback b{color:var(--text);}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <canvas id="scene"></canvas>
+  <div id="fallback"><div>Tu navegador no pudo iniciar <b>WebGL</b>.<br>Prueba con Chrome, Edge o Firefox actualizados.</div></div>
+
+  <div class="overlay">
+    <div class="topbar">
+      <div class="brand">LA <span>DELICIA</span></div>
+      <a href="index.html">Ver catálogo completo</a>
+    </div>
+
+    <div class="middle">
+      <div class="info" id="info">
+        <div class="eyebrow">Sabor <span class="badge" id="p-badge"></span></div>
+        <h1 id="p-nombre">BBQ</h1>
+        <p id="p-desc">Ahumado dulce con un final ligeramente picante.</p>
+        <div class="buyrow">
+          <div class="price" id="p-precio">$9.000</div>
+          <button class="buy" id="p-comprar">Comprar</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="thumbs" id="thumbs"></div>
+      <div class="hint">Arrastra para girar · flechas del teclado para cambiar de sabor</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+/* ============================================================
+   1. Datos de los productos
+   Los colores son los mismos "spot" del catálogo plano, para que
+   el halo de cada sabor coincida con el de index.html.
+   ============================================================ */
+const PRODUCTOS = [
+  {id:'bbq',              nombre:'BBQ',                desc:'Ahumado dulce con un final ligeramente picante.', precio:'$9.000', color:0xffb0cf, badge:''},
+  {id:'limon',            nombre:'Limón',              desc:'Cítrico intenso, fresco y con la sal justa.',     precio:'$9.000', color:0xb7e08a, badge:''},
+  {id:'carita-feliz',     nombre:'Carita Feliz',       desc:'La clásica de la casa. Suave y bien crocante.',   precio:'$9.000', color:0xffe98a, badge:''},
+  {id:'pollo',            nombre:'Pollo',              desc:'Sazón de pollo asado, profunda y salada.',        precio:'$9.000', color:0xffe27a, badge:''},
+  {id:'parrillada',       nombre:'Parrillada',         desc:'Notas de carne a la brasa y especias.',           precio:'$9.000', color:0xd9a9ff, badge:''},
+  {id:'chorizo-limon',    nombre:'Chorizo Limón',      desc:'Chorizo ahumado rematado con limón.',             precio:'$9.000', color:0xc7e08a, badge:''},
+  {id:'mayonesa',         nombre:'Mayonesa',           desc:'Cremosa y suave, con un toque de ajo.',           precio:'$9.000', color:0x9fd4ff, badge:''},
+  {id:'queso',            nombre:'Queso Cheddar',      desc:'Cheddar maduro, intenso y envolvente.',           precio:'$9.000', color:0xffb977, badge:''},
+  {id:'almuerzo-pollo',   nombre:'Almuercito Pollo',   desc:'Porción de almuerzo con sazón de pollo.',         precio:'$9.000', color:0xffe27a, badge:''},
+  {id:'almuerzo-limon',   nombre:'Almuercito Limón',   desc:'Porción de almuerzo, cítrica y fresca.',          precio:'$9.000', color:0xc7e08a, badge:''},
+  {id:'almuerzo-picante', nombre:'Almuercito Picante', desc:'Porción de almuerzo con picante marcado.',        precio:'$9.000', color:0xff9fae, badge:''},
+  {id:'mega',             nombre:'Mega',               desc:'Porción individual. Rinde para el antojo.',       precio:'$1.700', color:0xffe9a8, badge:'Económico'},
+  {id:'megaton',          nombre:'Megatón Familiar',   desc:'Bolsa familiar, pensada para compartir.',         precio:'$5.000', color:0xffe27a, badge:'Familiar'}
+];
+
+/* Pon aquí tu número con indicativo y sin signos (ej: '573001234567')
+   para que el botón Comprar abra WhatsApp con el pedido escrito. */
+const TELEFONO_WHATSAPP = '';
+
+/* ============================================================
+   2. Render, escena y cámara
+   ============================================================ */
+const canvas = document.getElementById('scene');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true, powerPreference:'high-performance'});
+} catch (err) {
+  document.getElementById('fallback').style.display = 'grid';
+  canvas.style.display = 'none';
+  throw err;
+}
+renderer.setClearColor(0x0b0b0b, 1);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0b0b0b, 12, 26);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(0, 0, 7);
+
+/* stage = desplazamiento lateral · tilt = parallax del ratón ·
+   fondo  = órbita completa del arrastre (dodecaedro y halo).
+   El producto cuelga de tilt, no de fondo: recibe solo una fracción de la
+   órbita para que nunca se ponga de canto y siga legible. */
+const stage = new THREE.Group();
+const tilt  = new THREE.Group();
+const fondo = new THREE.Group();
+/* El fondo se aleja como grupo y el dodecaedro va en su origen: así la
+   órbita lo hace girar sobre sí mismo en vez de trasladarlo en arco
+   (que lo separaba del producto y le clavaba una punta encima). */
+fondo.position.z = -3.4;
+tilt.add(fondo);
+stage.add(tilt);
+scene.add(stage);
+
+/* ============================================================
+   3. Entorno para el metal
+   Un metal sin reflejos se ve negro, así que se genera un
+   pequeño HDR procedural (degradado + dos manchas de luz).
+   ============================================================ */
+function crearEntorno(){
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 256;
+  const g = c.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 0, 256);
+  grad.addColorStop(0,   '#161616');
+  grad.addColorStop(0.55,'#4a3312');
+  grad.addColorStop(1,   '#8a6224');
+  g.fillStyle = grad; g.fillRect(0, 0, 512, 256);
+  const mancha = (x, y, r, color) => {
+    const rg = g.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, color); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rg; g.fillRect(x - r, y - r, r * 2, r * 2);
+  };
+  mancha(140, 80, 150, 'rgba(255,236,205,1)');     // luz principal
+  mancha(390, 120, 130, 'rgba(255,120,170,.85)');  // luz de contorno
+  const tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const rt = pmrem.fromEquirectangular(tex);
+  tex.dispose(); pmrem.dispose();
+  return rt.texture;
+}
+scene.environment = crearEntorno();
+
+/* ============================================================
+   4. Luces: dos puntos, tal como pide el diseño
+   ============================================================ */
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+const luzFrontal = new THREE.PointLight(0xffd9a0, 90, 40, 2);
+luzFrontal.position.set(3.2, 2.6, 4.2);
+scene.add(luzFrontal);
+
+const luzContorno = new THREE.PointLight(0xff3f7e, 70, 40, 2);
+luzContorno.position.set(-3.8, 1.4, -3.2);
+scene.add(luzContorno);
+
+/* ============================================================
+   5. Dodecaedro metálico (detrás del producto)
+   ============================================================ */
+const dodeca = new THREE.Mesh(
+  new THREE.DodecahedronGeometry(2.6, 0),
+  new THREE.MeshStandardMaterial({
+    color: 0xcda355, metalness: 0.92, roughness: 0.3,
+    envMapIntensity: 1.9, flatShading: true
+  })
+);
+fondo.add(dodeca);
+
+/* Halo suave que tiñe el fondo con el color del sabor activo */
+function crearHalo(){
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const rg = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  rg.addColorStop(0,   'rgba(255,255,255,.85)');
+  rg.addColorStop(0.45,'rgba(255,255,255,.25)');
+  rg.addColorStop(1,   'rgba(255,255,255,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const halo = new THREE.Mesh(
+  new THREE.PlaneGeometry(8.5, 8.5),
+  new THREE.MeshBasicMaterial({
+    map: crearHalo(), transparent: true, opacity: 0.55,
+    blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false
+  })
+);
+halo.position.z = 0.45;   // relativo al grupo fondo
+fondo.add(halo);
+
+/* ============================================================
+   6. El producto: plano con el PNG recortado
+   La foto ya trae su propia luz, así que va sin sombrear
+   (MeshBasicMaterial) para que no se ensucie.
+   ============================================================ */
+const materialProducto = new THREE.MeshBasicMaterial({
+  transparent: true, opacity: 0, depthWrite: false, toneMapped: false
+});
+const producto = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), materialProducto);
+producto.scale.set(0.001, 0.001, 1);
+tilt.add(producto);
+
+const cargador = new THREE.TextureLoader();
+const cache = new Map();
+const ALTO = 3.5;   // alto del producto en unidades de escena
+
+function cargarTextura(id){
+  if (cache.has(id)) return Promise.resolve(cache.get(id));
+  return new Promise((resolve, reject) => {
+    // .webp primero (10x más liviano); si el navegador no puede, se cae al .png
+    cargador.load(id + '.webp',
+      tex => { cache.set(id, tex); resolve(tex); },
+      undefined,
+      () => cargador.load(id + '.png',
+        tex => { cache.set(id, tex); resolve(tex); },
+        undefined,
+        reject)
+    );
+  });
+}
+
+/* ============================================================
+   7. Cambio de sabor (con fundido)
+   ============================================================ */
+const el = {
+  info:    document.getElementById('info'),
+  nombre:  document.getElementById('p-nombre'),
+  desc:    document.getElementById('p-desc'),
+  precio:  document.getElementById('p-precio'),
+  badge:   document.getElementById('p-badge'),
+  thumbs:  document.getElementById('thumbs')
+};
+
+let indiceActual = -1;
+let opacidadObjetivo = 0;
+
+async function seleccionar(i, inmediato = false){
+  if (i === indiceActual) return;
+  indiceActual = i;
+  const p = PRODUCTOS[i];
+
+  [...el.thumbs.children].forEach((t, n) => t.setAttribute('aria-current', String(n === i)));
+
+  if (!inmediato){
+    opacidadObjetivo = 0;
+    el.info.classList.add('swapping');
+    await new Promise(r => setTimeout(r, 260));
+    if (indiceActual !== i) return;   // el usuario ya cambió otra vez
+  }
+
+  el.nombre.textContent = p.nombre;
+  el.desc.textContent   = p.desc;
+  el.precio.textContent = p.precio;
+  el.badge.textContent  = p.badge;
+  el.info.classList.remove('swapping');
+  halo.material.color.setHex(p.color);
+  luzContorno.color.setHex(p.color);
+
+  try {
+    const tex = await cargarTextura(p.id);
+    if (indiceActual !== i) return;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    materialProducto.map = tex;
+    materialProducto.needsUpdate = true;
+    const img = tex.image;
+    producto.scale.set(ALTO * (img.width / img.height), ALTO, 1);
+    opacidadObjetivo = 1;
+  } catch {
+    console.warn('No se pudo cargar la imagen de "' + p.id + '".');
+    opacidadObjetivo = 0;
+  }
+}
+
+/* miniaturas */
+PRODUCTOS.forEach((p, i) => {
+  const b = document.createElement('button');
+  b.className = 'thumb';
+  b.type = 'button';
+  b.title = p.nombre;
+  b.setAttribute('aria-label', p.nombre);
+  b.innerHTML = '<img src="' + p.id + '.webp" alt="" onerror="this.src=\'' + p.id + '.png\'">';
+  b.addEventListener('click', () => seleccionar(i));
+  el.thumbs.appendChild(b);
+});
+
+document.getElementById('p-comprar').addEventListener('click', () => {
+  const p = PRODUCTOS[indiceActual];
+  if (!TELEFONO_WHATSAPP){
+    console.warn('Define TELEFONO_WHATSAPP en el script para activar el botón Comprar.');
+    return;
+  }
+  const msg = 'Hola, quiero pedir La Delicia ' + p.nombre + ' (' + p.precio + ').';
+  window.open('https://wa.me/' + TELEFONO_WHATSAPP + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+});
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') seleccionar((indiceActual + 1) % PRODUCTOS.length);
+  if (e.key === 'ArrowLeft')  seleccionar((indiceActual - 1 + PRODUCTOS.length) % PRODUCTOS.length);
+});
+
+/* ============================================================
+   8. Interacción: parallax del ratón + arrastre para orbitar
+   ============================================================ */
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+let raton = {x:0, y:0};                       // -1..1
+let orbita = {x:0, y:0}, orbitaObjetivo = {x:0, y:0};
+let arrastrando = false, ultX = 0, ultY = 0;
+
+window.addEventListener('pointermove', e => {
+  raton.x = (e.clientX / window.innerWidth)  * 2 - 1;
+  raton.y = (e.clientY / window.innerHeight) * 2 - 1;
+});
+
+canvas.addEventListener('pointerdown', e => {
+  arrastrando = true; ultX = e.clientX; ultY = e.clientY;
+  canvas.classList.add('dragging');
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', e => {
+  if (!arrastrando) return;
+  orbitaObjetivo.y += (e.clientX - ultX) * 0.0035;
+  orbitaObjetivo.x += (e.clientY - ultY) * 0.0022;
+  // Se limita el giro: el producto es un plano y de canto no se leería.
+  orbitaObjetivo.y = clamp(orbitaObjetivo.y, -0.5, 0.5);
+  orbitaObjetivo.x = clamp(orbitaObjetivo.x, -0.26, 0.26);
+  ultX = e.clientX; ultY = e.clientY;
+});
+const soltar = () => { arrastrando = false; canvas.classList.remove('dragging'); };
+window.addEventListener('pointerup', soltar);
+window.addEventListener('pointercancel', soltar);
+
+/* ============================================================
+   9. Bucle de animación
+   ============================================================ */
+const reloj = new THREE.Clock();
+let desplazamientoX = 0, desplazamientoObjetivoX = 0;
+
+function animar(){
+  requestAnimationFrame(animar);
+  const t = reloj.getElapsedTime();
+
+  // levitación suave en Y + balanceo casi imperceptible
+  producto.position.y = Math.sin(t * 0.9) * 0.13;
+  producto.rotation.z = Math.sin(t * 0.5) * 0.02;
+  dodeca.position.y   = Math.sin(t * 0.7 + 1.2) * 0.2;
+  halo.position.y     = producto.position.y * 0.5;
+
+  // rotación continua del dodecaedro sobre su propio eje
+  dodeca.rotation.y += 0.0032;
+  dodeca.rotation.x += 0.0011;
+
+  // parallax del ratón (suavizado)
+  tilt.rotation.y += (raton.x * 0.2  - tilt.rotation.y) * 0.05;
+  tilt.rotation.x += (raton.y * 0.13 - tilt.rotation.x) * 0.05;
+
+  // órbita del arrastre (suavizada): completa al fondo, parcial al producto
+  orbita.y += (orbitaObjetivo.y - orbita.y) * 0.08;
+  orbita.x += (orbitaObjetivo.x - orbita.x) * 0.08;
+  fondo.rotation.y = orbita.y;
+  fondo.rotation.x = orbita.x;
+  producto.rotation.y = orbita.y * 0.4;
+  producto.rotation.x = orbita.x * 0.4;
+
+  // en pantalla ancha el producto se corre a la derecha para dejar sitio al texto
+  desplazamientoX += (desplazamientoObjetivoX - desplazamientoX) * 0.08;
+  stage.position.x = desplazamientoX;
+
+  // fundido al cambiar de sabor
+  materialProducto.opacity += (opacidadObjetivo - materialProducto.opacity) * 0.12;
+  halo.material.opacity = 0.55 * materialProducto.opacity;
+
+  renderer.render(scene, camera);
+}
+
+/* ============================================================
+   10. Ajuste al tamaño de la ventana
+   ============================================================ */
+function redimensionar(){
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  // en pantallas estrechas se aleja la cámara para que el producto quepa
+  camera.position.z = w < 900 ? 8.6 : 7;
+  camera.updateProjectionMatrix();
+  desplazamientoObjetivoX = w > 900 ? 1.15 : 0;
+}
+window.addEventListener('resize', redimensionar);
+redimensionar();
+
+seleccionar(0, true);
+animar();
+</script>
+</body>
+</html>
