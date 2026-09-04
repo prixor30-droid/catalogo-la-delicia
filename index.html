@@ -120,9 +120,10 @@
     transform:translateY(-20px) scale(1.07);
     z-index:5;
   }
+  /* Sin overflow:hidden a propósito: el resplandor mide más que la tarjeta
+     y recortarlo dejaba un rectángulo de bordes duros sobre el fondo negro. */
   .card__bg{
     position:absolute; inset:0;
-    overflow:hidden;
     z-index:0;
   }
 
@@ -146,19 +147,15 @@
     transition:opacity .35s ease;
   }
   .card:hover .spot{ opacity:1; animation-play-state:paused; transform:translateX(-50%) scale(1.32); }
-  .card::after{
-    content:"";
-    position:absolute; inset:0;
-    border-radius:20px;
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
-    pointer-events:none;
-  }
 
   .photo{
     position:relative; z-index:1;
     width:100%;
     aspect-ratio:3/3.7;
     display:flex;align-items:center;justify-content:center;
+    /* Perspectiva corta = giro con volumen. Con valores altos (1000px+) el
+       volteo parece una lámina girando, sin profundidad. */
+    perspective:620px;
   }
   .photo img{
     max-width:100%; max-height:100%;
@@ -167,7 +164,56 @@
     filter:drop-shadow(0 18px 22px rgba(0,0,0,.55));
     transition:transform .45s cubic-bezier(.34,1.56,.64,1);
   }
-  .card:hover .photo img{transform:scale(1.2) rotate(-6deg);}
+  /* El zoom al pasar el ratón se excluye en las tarjetas que giran:
+     su transform pelearía con el rotateY del volteo. */
+  .card:not(.tiene-reverso):hover .photo img{transform:scale(1.2) rotate(-6deg);}
+
+  /* ---------- tarjeta que gira (frente / reverso) ---------- */
+  .flip{
+    position:absolute; inset:0;
+    transform-style:preserve-3d;
+    transition:transform .68s cubic-bezier(.45,.05,.2,1);
+  }
+  .card.flipped .flip{transform:rotateY(180deg);}
+
+  /* El impulso va en .photo y no en .flip: si fuera en .flip, la animación
+     pisaría el transform del rotateY. Al ir aparte, sirve para los dos
+     sentidos del giro sin tener que saber hacia dónde va. */
+  .photo.impulso{animation:acercar .68s cubic-bezier(.45,.05,.2,1);}
+  @keyframes acercar{
+    0%,100%{transform:scale(1);}
+    50%    {transform:scale(1.12);}
+  }
+  /* El backface va también en el <img>: su filter:drop-shadow lo compone en
+     una capa aparte y no hereda el del contenedor, así que sin esto se vería
+     el reverso por encima del frente. */
+  .cara, .cara img{
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+  }
+  .cara{
+    position:absolute; inset:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .cara.reverso{transform:rotateY(180deg);}
+  .girar{
+    position:absolute; z-index:3;
+    top:14px; left:14px;
+    font-family:'Poppins',sans-serif;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--gold);
+    background:rgba(244,177,61,.12);
+    border:1px solid rgba(244,177,61,.35);
+    padding:3px 9px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:background .25s,color .25s;
+  }
+  .girar:hover{background:var(--gold);color:#1a1410;}
+  .tiene-reverso{cursor:pointer;}
 
   .name{
     position:relative; z-index:1;
@@ -305,12 +351,21 @@
       <div class="price">$9.000</div>
     </article>
 
-    <article class="card" style="--spot-c1:#ffb977;--spot-c2:#c05a12;">
+    <article class="card tiene-reverso" style="--spot-c1:#ffb977;--spot-c2:#c05a12;">
+      <button class="girar" type="button" aria-pressed="false">Reverso</button>
       <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="queso.webp" type="image/webp">
-        <img src="queso.png" alt="La Delicia Queso Cheddar" loading="lazy">
-      </picture></div>
+      <div class="photo">
+        <div class="flip">
+          <picture class="cara">
+            <source srcset="queso.webp" type="image/webp">
+            <img src="queso.png" alt="La Delicia Queso Cheddar, frente del empaque" loading="lazy">
+          </picture>
+          <picture class="cara reverso">
+            <source srcset="queso-reverso.webp" type="image/webp">
+            <img src="queso-reverso.png" alt="Queso Cheddar, reverso con información nutricional e ingredientes" loading="lazy">
+          </picture>
+        </div>
+      </div>
       <div class="name">Queso Cheddar</div>
       <div class="price">$9.000</div>
     </article>
@@ -391,6 +446,25 @@
   } else {
     cards.forEach(function(c){ c.classList.add('in'); });
   }
+
+  /* Tarjetas con reverso: giran al tocar la tarjeta o el botón.
+     El botón existe para que también funcione con teclado. */
+  document.querySelectorAll('.card.tiene-reverso').forEach(function(card){
+    var btn = card.querySelector('.girar');
+    var foto = card.querySelector('.photo');
+    function girar(){
+      var volteada = card.classList.toggle('flipped');
+      btn.textContent = volteada ? 'Frente' : 'Reverso';
+      btn.setAttribute('aria-pressed', String(volteada));
+      /* Se quita y se vuelve a poner, forzando un reflow entre medias,
+         para que la animación arranque de cero si se gira varias veces. */
+      foto.classList.remove('impulso');
+      void foto.offsetWidth;
+      foto.classList.add('impulso');
+    }
+    card.addEventListener('click', girar);
+    btn.addEventListener('click', function(e){ e.stopPropagation(); girar(); });
+  });
 </script>
 </body>
 </html>
