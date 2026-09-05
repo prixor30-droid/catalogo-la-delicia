@@ -292,13 +292,109 @@
   }
   .girar:hover{background:var(--gold);color:#1a1410;}
 
+  /* ---------- ficha lateral (solo pantallas anchas) ---------- */
+  .ficha{
+    display:none;
+    position:absolute;
+    left:0;
+    /* centro vertical de .escena, que es el primer hijo en flujo del carrusel */
+    top:calc((var(--alto-foto) + 170px) / 2);
+    transform:translateY(-50%);
+    width:min(390px,38%);
+    z-index:40;
+    pointer-events:none;
+  }
+  .ficha__etiqueta{
+    display:inline-block;
+    font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--pink);
+    background:rgba(255,63,126,.12);
+    border:1px solid rgba(255,63,126,.35);
+    padding:3px 10px;border-radius:999px;
+    margin-bottom:12px;
+  }
+  .ficha__etiqueta:empty{display:none;}
+  .ficha__nombre{
+    font-family:'Anton',sans-serif;font-weight:400;
+    text-transform:uppercase;line-height:1;letter-spacing:.01em;
+    font-size:clamp(30px,3.6vw,48px);
+    margin:-.14em 0 0;padding-top:.14em;
+    color:var(--text);
+  }
+  .ficha__desc{
+    color:var(--text-dim);
+    font-size:15.5px;line-height:1.7;
+    margin:14px 0 0;
+  }
+  .ficha__precio{
+    display:inline-flex;align-items:baseline;gap:.4em;
+    margin-top:22px;
+    font-weight:700;font-size:15px;letter-spacing:.02em;
+    color:#1a1410;
+    background:linear-gradient(180deg,var(--gold-2),var(--gold));
+    padding:8px 20px;border-radius:999px;
+    box-shadow:0 6px 16px rgba(244,177,61,.3);
+  }
+  .ficha__precio .unidad{
+    font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    opacity:.6;
+  }
+  /* Cada parte entra por separado y escalonada: leerlo de arriba abajo se
+     siente más deliberado que ver el bloque entero aparecer de golpe. */
+  @keyframes entrarIzquierda{
+    0%  {opacity:0;transform:translateX(-38px);}
+    100%{opacity:1;transform:translateX(0);}
+  }
+  .ficha.cambiando > *{opacity:0;}
+  .ficha.entrando > *{animation:entrarIzquierda .55s cubic-bezier(.16,1,.3,1) both;}
+  .ficha.entrando .ficha__nombre{animation-delay:.05s;}
+  .ficha.entrando .ficha__desc  {animation-delay:.11s;}
+  .ficha.entrando .ficha__precio{animation-delay:.17s;}
+
+  @media (min-width:900px){
+    .ficha{display:block;}
+    /* los datos pasan a la ficha; bajo la foto solo queda el botón de reverso */
+    .meta .etiqueta,.meta .desc,.meta .nombre,.meta .precio{display:none;}
+    .meta{margin-top:8px;}
+  }
+
+  /* ---------- móvil: el paquete se encoge y cede el sitio al texto ---------- */
+  .meta .desc{
+    color:var(--text-dim);
+    font-size:13.5px;line-height:1.6;
+    max-width:30ch;margin:0 auto;
+  }
+  @media (max-width:899px){
+    .foto{transition:transform .6s cubic-bezier(.16,1,.3,1);}
+    .meta .desc{
+      max-height:0;opacity:0;overflow:hidden;
+      transition:max-height .55s cubic-bezier(.16,1,.3,1),
+                 opacity .3s ease,
+                 margin .55s cubic-bezier(.16,1,.3,1);
+    }
+    .item.abierto .foto{transform:scale(.58) translateY(-14%);}
+    .item.abierto .meta{margin-top:-16%;}
+    .item.abierto .meta .desc{
+      max-height:8em;opacity:1;margin-top:12px;
+      transition-delay:.12s,.18s,.12s;
+    }
+    /* la pista cambia según lo que puedes hacer en cada tamaño */
+    .pista__ancha{display:none;}
+  }
+  @media (min-width:900px){
+    .pista__movil{display:none;}
+  }
+
   /* ---------- flechas ---------- */
+  .controles{
+    display:flex;align-items:center;justify-content:center;
+    gap:18px;margin-top:26px;
+  }
   .nav{
-    position:absolute;top:calc(50% - 46px);
-    z-index:60;
-    width:52px;height:52px;
+    flex:0 0 auto;
+    width:46px;height:46px;
     display:grid;place-items:center;
-    font-size:26px;line-height:1;
+    font-size:24px;line-height:1;
     color:var(--gold);
     background:rgba(0,0,0,.5);
     border:1px solid rgba(244,177,61,.35);
@@ -308,13 +404,11 @@
   }
   .nav:hover{background:var(--gold);color:#1a1410;transform:scale(1.14);}
   .nav:disabled{opacity:.22;cursor:default;transform:none;background:rgba(0,0,0,.5);color:var(--gold);}
-  .nav.prev{left:max(8px,calc(50% - var(--w) * 1.72));}
-  .nav.next{right:max(8px,calc(50% - var(--w) * 1.72));}
 
   /* ---------- puntos ---------- */
   .puntos{
     display:flex;justify-content:center;flex-wrap:wrap;
-    gap:8px;margin-top:26px;
+    gap:8px;
   }
   .punto{
     width:8px;height:8px;padding:0;
@@ -343,8 +437,12 @@
   footer b{color:var(--text);}
 
   @media (max-width:640px){
-    .nav{width:42px;height:42px;font-size:21px;}
+    .nav{width:38px;height:38px;font-size:20px;}
     .hero{padding:12px 0 18px;}
+    /* con 14 sabores los puntos más las flechas no caben en una línea a 375px
+       y se partían en dos: se aprieta el espaciado en vez de dejar que salten */
+    .controles{gap:10px;}
+    .puntos{gap:6px;flex-wrap:nowrap;}
   }
 
   /* Quien pide menos movimiento en su sistema recibe el catálogo quieto:
@@ -361,6 +459,9 @@
        terminar, así que hay que devolverlos a la vista explícitamente */
     .logo,.hero__eyebrow,.hero h1,.carrusel{opacity:1;}
     .item.activo .meta{opacity:1;transform:none;}
+    /* la ficha entra con animación escalonada y su estado inicial es opacity:0;
+       aquí se fuerza visible por si el JS no llegara a quitar las clases */
+    .ficha > *{opacity:1 !important;animation:none !important;}
   }
 
   /* Sin JS el carrusel no puede colocarse: se muestran en columna. */
@@ -388,8 +489,16 @@
   </section>
 
   <section class="carrusel" id="carrusel">
-    <button class="nav prev" id="prev" type="button" aria-label="Sabor anterior">‹</button>
-    <button class="nav next" id="next" type="button" aria-label="Sabor siguiente">›</button>
+    <!-- Ficha del sabor activo, solo en pantallas anchas. El contenido lo copia
+         el JS desde la tarjeta centrada, así que los datos siguen viviendo en
+         un único sitio: el <article> de cada producto. Con aria-live el cambio
+         de sabor se anuncia a quien use lector de pantalla. -->
+    <div class="ficha" id="ficha" aria-live="polite">
+      <div class="ficha__etiqueta"></div>
+      <h2 class="ficha__nombre"></h2>
+      <p class="ficha__desc"></p>
+      <div class="ficha__precio"></div>
+    </div>
 
     <div class="escena" id="escena">
 
@@ -403,6 +512,7 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">BBQ</h2>
+            <p class="desc">Ahumado dulce con un final ligeramente picante.</p>
             <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
@@ -418,6 +528,7 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Limón</h2>
+            <p class="desc">Cítrico intenso, fresco y con la sal justa.</p>
             <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
@@ -433,6 +544,7 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Carita Feliz</h2>
+            <p class="desc">La clásica de la casa. Suave y bien crocante.</p>
             <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
@@ -448,6 +560,7 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Pollo</h2>
+            <p class="desc">Sazón de pollo asado, profunda y salada.</p>
             <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
@@ -463,6 +576,7 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Parrillada</h2>
+            <p class="desc">Notas de carne a la brasa y especias.</p>
             <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
@@ -478,6 +592,7 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Chorizo Limón</h2>
+            <p class="desc">Chorizo ahumado rematado con limón.</p>
             <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
@@ -493,6 +608,7 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Mayonesa</h2>
+            <p class="desc">Cremosa y suave, con un toque de ajo.</p>
             <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
@@ -516,6 +632,7 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Queso Cheddar</h2>
+            <p class="desc">Cheddar maduro, intenso y envolvente.</p>
             <div class="precio">$9.000 <span class="unidad">docena</span></div>
             <div><button class="girar" type="button" aria-pressed="false">Ver reverso</button></div>
           </div>
@@ -532,6 +649,7 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Almuercito Pollo</h2>
+            <p class="desc">Porción de almuerzo con sazón de pollo.</p>
             <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
@@ -547,6 +665,7 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Almuercito Limón</h2>
+            <p class="desc">Porción de almuerzo, cítrica y fresca.</p>
             <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
@@ -562,6 +681,7 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Almuercito Picante</h2>
+            <p class="desc">Porción de almuerzo con picante marcado.</p>
             <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
@@ -577,6 +697,7 @@
           <div class="meta">
             <div class="etiqueta">140 g</div>
             <h2 class="nombre">Fosforito</h2>
+            <p class="desc">Papa en bastón, crocante y pensada para compartir.</p>
             <div class="precio">$5.000 <span class="unidad">c/u</span></div>
           </div>
         </div>
@@ -592,6 +713,7 @@
           <div class="meta">
             <div class="etiqueta">Económico</div>
             <h2 class="nombre">Mega</h2>
+            <p class="desc">Porción individual. Rinde para el antojo.</p>
             <div class="precio">$1.700 <span class="unidad">c/u</span></div>
           </div>
         </div>
@@ -607,6 +729,7 @@
           <div class="meta">
             <div class="etiqueta">Familiar</div>
             <h2 class="nombre">Megatón Familiar</h2>
+            <p class="desc">Bolsa familiar, pensada para compartir.</p>
             <div class="precio">$5.000 <span class="unidad">c/u</span></div>
           </div>
         </div>
@@ -614,8 +737,18 @@
 
     </div>
 
-    <div class="puntos" id="puntos"></div>
-    <div class="pista">Arrastra, usa las flechas o el teclado</div>
+    <!-- Las flechas van en la misma fila que los puntos. Antes flotaban sobre
+         los lados y se montaban encima de las tarjetas vecinas en tablet, y al
+         correr el producto a la derecha pasó a ocurrir también en escritorio. -->
+    <div class="controles">
+      <button class="nav prev" id="prev" type="button" aria-label="Sabor anterior">‹</button>
+      <div class="puntos" id="puntos"></div>
+      <button class="nav next" id="next" type="button" aria-label="Sabor siguiente">›</button>
+    </div>
+    <div class="pista">
+      <span class="pista__ancha">Arrastra, usa las flechas o el teclado</span>
+      <span class="pista__movil">Toca el paquete para ver el sabor</span>
+    </div>
   </section>
 </div>
 
@@ -653,6 +786,19 @@
   var DESENF = 1.8;    // desenfoque por paso, en px
   var VISIBLES = 3;    // tarjetas visibles a cada lado
 
+  var ficha = document.getElementById('ficha');
+  var quieto = window.matchMedia('(prefers-reduced-motion:reduce)');
+
+  /* En pantalla ancha el producto se corre a la derecha para dejarle la mitad
+     izquierda a la ficha, y las tarjetas de ese lado se ocultan: si no, se
+     meten justo debajo del texto y no hay forma de leerlo. */
+  var DESPL = 0, anchoModo = false;
+  function medirModo(){
+    anchoModo = window.innerWidth >= 900;
+    var libre = (escena.clientWidth - (items[0].offsetWidth || 240)) / 2;
+    DESPL = anchoModo ? Math.max(0, Math.min(230, libre * 0.55)) : 0;
+  }
+
   function colocar(){
     var ancho = items[0].offsetWidth || 240;
     var centro = Math.round(pos);
@@ -660,11 +806,11 @@
     items.forEach(function(el, i){
       var off = i - pos;
       var abs = Math.abs(off);
-      var fuera = abs > VISIBLES + 0.5;
+      var fuera = abs > VISIBLES + 0.5 || (anchoModo && off < -0.5);
 
       el.style.transform =
         'translate(-50%,-50%)' +
-        ' translateX(' + (off * ancho * SEP) + 'px)' +
+        ' translateX(' + (off * ancho * SEP + DESPL) + 'px)' +
         ' translateZ(' + (-abs * FONDO) + 'px)' +
         ' rotateY(' + (-off * GIRO) + 'deg)' +
         ' scale(' + Math.max(0.34, 1 - abs * ESCALA) + ')';
@@ -679,15 +825,42 @@
       activo = centro;
       items.forEach(function(el, i){
         el.classList.toggle('activo', i === activo);
-        // al salir del centro se vuelve al frente
-        if (i !== activo) el.classList.remove('volteada');
+        // al salir del centro se vuelve al frente y se cierra la descripción
+        if (i !== activo){ el.classList.remove('volteada'); el.classList.remove('abierto'); }
       });
       Array.prototype.forEach.call(puntos.children, function(p, i){
         p.setAttribute('aria-current', String(i === activo));
       });
       btnPrev.disabled = activo <= 0;
       btnNext.disabled = activo >= total - 1;
+      llenarFicha();
     }
+  }
+
+  /* La ficha copia lo que ya está escrito en la tarjeta activa: los datos
+     siguen viviendo solo en el <article>, no hay una segunda lista que
+     mantener sincronizada. */
+  function llenarFicha(){
+    var el = items[activo];
+    if (!el) return;
+    var tomar = function(sel){ var n = el.querySelector(sel); return n ? n.innerHTML : ''; };
+    var pintar = function(){
+      ficha.querySelector('.ficha__etiqueta').textContent = (el.querySelector('.etiqueta') || {}).textContent || '';
+      ficha.querySelector('.ficha__nombre').textContent   = (el.querySelector('.nombre')  || {}).textContent || '';
+      ficha.querySelector('.ficha__desc').textContent     = (el.querySelector('.desc')    || {}).textContent || '';
+      ficha.querySelector('.ficha__precio').innerHTML     = tomar('.precio');
+      ficha.classList.remove('cambiando');
+      if (!quieto.matches){
+        ficha.classList.remove('entrando');
+        void ficha.offsetWidth;          // reinicia la animación
+        ficha.classList.add('entrando');
+      }
+    };
+    if (quieto.matches){ pintar(); return; }
+    // se oculta primero para que el texto no cambie a la vista del lector
+    ficha.classList.add('cambiando');
+    clearTimeout(llenarFicha._t);
+    llenarFicha._t = setTimeout(pintar, 140);
   }
 
   function ir(i){
@@ -719,7 +892,13 @@
     el.addEventListener('click', function(){
       if (movido) return;              // fue un arrastre, no un clic
       if (i !== activo){ ir(i); return; }
-      if (el.classList.contains('tiene-reverso')) voltear(el);
+      if (anchoModo){
+        // en pantalla ancha la descripción ya está en la ficha, así que el
+        // clic sigue sirviendo para girar el paquete
+        if (el.classList.contains('tiene-reverso')) voltear(el);
+      } else {
+        el.classList.toggle('abierto');
+      }
     });
   });
 
@@ -770,8 +949,15 @@
   escena.addEventListener('pointerup', soltar);
   escena.addEventListener('pointercancel', soltar);
 
-  window.addEventListener('resize', colocar);
+  window.addEventListener('resize', function(){
+    var antes = anchoModo;
+    medirModo();
+    colocar();
+    // al cruzar el corte de 900px cambia dónde se muestra el texto
+    if (antes !== anchoModo) llenarFicha();
+  });
 
+  medirModo();
   ir(0);
 })();
 </script>
