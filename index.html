@@ -157,21 +157,24 @@
   }
   /* Rebote marcado al llegar al centro. Es solo escala y salto vertical:
      nada de rotación, para que las tarjetas nunca se vean inclinadas. */
-  .item.activo .tarjeta{animation:entrar .95s cubic-bezier(.16,1.55,.28,1);}
+  .item.activo .tarjeta{animation:entrar 1.15s cubic-bezier(.16,1.55,.28,1);}
   @keyframes entrar{
-    0%  {transform:scale(.68) translateY(34px);}
-    42% {transform:scale(1.16) translateY(-18px);}
-    68% {transform:scale(.96) translateY(6px);}
-    86% {transform:scale(1.03) translateY(-2px);}
+    0%  {transform:scale(.50) translateY(62px);}
+    36% {transform:scale(1.28) translateY(-36px);}
+    60% {transform:scale(.90) translateY(15px);}
+    78% {transform:scale(1.08) translateY(-7px);}
+    91% {transform:scale(.975) translateY(2px);}
     100%{transform:scale(1) translateY(0);}
   }
 
   /* Forma sólida por sabor: círculo de color plano, sin degradado ni
      desenfoque. Entra desde la izquierda cuando el sabor toma el centro. */
   @keyframes llegarIzquierda{
-    0%  {transform:translateX(-165%) scale(.72);opacity:0;}
-    62% {transform:translateX(-42%) scale(1.05);opacity:1;}
-    100%{transform:translateX(-50%) scale(1);opacity:1;}
+    0%  {transform:translateX(-250%) scale(.48);opacity:0;}
+    52% {transform:translateX(-32%)  scale(1.18);opacity:1;}
+    74% {transform:translateX(-58%)  scale(.92); opacity:1;}
+    89% {transform:translateX(-46%)  scale(1.04);opacity:1;}
+    100%{transform:translateX(-50%)  scale(1);   opacity:1;}
   }
   .spot{
     position:absolute;
@@ -188,7 +191,7 @@
   }
   .item.activo .spot{
     opacity:1;
-    animation:llegarIzquierda .85s cubic-bezier(.22,1.28,.32,1);
+    animation:llegarIzquierda 1.05s cubic-bezier(.22,1.28,.32,1);
   }
 
   .foto{
@@ -243,8 +246,8 @@
     margin-top:16px;
     text-align:center;
     opacity:0;
-    transform:translateY(30px) scale(.86);
-    transition:opacity .5s ease .14s,transform .6s cubic-bezier(.16,1.55,.28,1) .14s;
+    transform:translateY(52px) scale(.68);
+    transition:opacity .55s ease .16s,transform .85s cubic-bezier(.2,1.9,.35,1) .16s;
   }
   .item.activo .meta{opacity:1;transform:translateY(0) scale(1);}
   .etiqueta{
@@ -321,10 +324,15 @@
     margin:-.14em 0 0;padding-top:.14em;
     color:var(--text);
   }
+  /* La descripción va en Anton como los títulos: en Poppins se leía como texto
+     suelto de otra página. Al ser condensada y pesada, se compensa con
+     interlineado amplio y un tono más apagado para que no le pelee al nombre. */
   .ficha__desc{
+    font-family:'Anton',sans-serif;font-weight:400;
+    font-size:clamp(20px,2.2vw,28px);
+    line-height:1.24;letter-spacing:.008em;
     color:var(--text-dim);
-    font-size:15.5px;line-height:1.7;
-    margin:14px 0 0;
+    margin:16px 0 0;
   }
   .ficha__precio{
     display:inline-flex;align-items:baseline;gap:.4em;
@@ -341,15 +349,30 @@
   }
   /* Cada parte entra por separado y escalonada: leerlo de arriba abajo se
      siente más deliberado que ver el bloque entero aparecer de golpe. */
+  /* Entradas con rebote: llegan de más lejos, se pasan de largo y vuelven.
+     El nombre lleva la versión más marcada porque es lo que debe capturar
+     la mirada; los demás lo siguen escalonados. */
   @keyframes entrarIzquierda{
-    0%  {opacity:0;transform:translateX(-38px);}
-    100%{opacity:1;transform:translateX(0);}
+    0%  {opacity:0;transform:translateX(-130px) scale(.84) rotate(-4deg);}
+    55% {opacity:1;transform:translateX(16px)  scale(1.07) rotate(1.4deg);}
+    78% {            transform:translateX(-6px) scale(.98) rotate(-.5deg);}
+    100%{opacity:1;transform:none;}
+  }
+  @keyframes entrarNombre{
+    0%  {opacity:0;transform:translateX(-190px) scale(.62) rotate(-8deg);}
+    48% {opacity:1;transform:translateX(26px)  scale(1.18) rotate(2.4deg);}
+    70% {            transform:translateX(-12px) scale(.94) rotate(-1.4deg);}
+    86% {            transform:translateX(5px)  scale(1.05) rotate(.6deg);}
+    100%{opacity:1;transform:none;}
   }
   .ficha.cambiando > *{opacity:0;}
-  .ficha.entrando > *{animation:entrarIzquierda .55s cubic-bezier(.16,1,.3,1) both;}
-  .ficha.entrando .ficha__nombre{animation-delay:.05s;}
-  .ficha.entrando .ficha__desc  {animation-delay:.11s;}
-  .ficha.entrando .ficha__precio{animation-delay:.17s;}
+  .ficha.entrando > *{animation:entrarIzquierda .8s cubic-bezier(.16,1,.3,1) both;}
+  .ficha.entrando .ficha__nombre{
+    animation:entrarNombre .95s cubic-bezier(.16,1,.3,1) both;
+    animation-delay:.07s;
+  }
+  .ficha.entrando .ficha__desc  {animation-delay:.17s;}
+  .ficha.entrando .ficha__precio{animation-delay:.27s;}
 
   @media (min-width:900px){
     .ficha{display:block;}
@@ -359,24 +382,35 @@
   }
 
   /* ---------- móvil: el paquete se encoge y cede el sitio al texto ---------- */
+  /* En móvil la descripción cae encima del círculo de color, no sobre negro:
+     con --text-dim el contraste se queda corto según el sabor, así que va en
+     claro y con una sombra que la despega de cualquier fondo. */
   .meta .desc{
-    color:var(--text-dim);
-    font-size:13.5px;line-height:1.6;
-    max-width:30ch;margin:0 auto;
+    font-family:'Anton',sans-serif;font-weight:400;
+    font-size:clamp(16px,4.6vw,21px);
+    line-height:1.26;letter-spacing:.008em;
+    color:var(--text);
+    text-shadow:0 2px 10px rgba(0,0,0,.55);
+    max-width:22ch;margin:0 auto;
   }
   @media (max-width:899px){
-    .foto{transition:transform .6s cubic-bezier(.16,1,.3,1);}
+    /* el paquete se va con rebote (la curva se pasa de 1 a propósito) y el
+       texto sube detrás, no solo aparece */
+    .foto{transition:transform .75s cubic-bezier(.34,1.56,.64,1);}
     .meta .desc{
       max-height:0;opacity:0;overflow:hidden;
-      transition:max-height .55s cubic-bezier(.16,1,.3,1),
+      transform:translateY(30px) scale(.88);
+      transition:max-height .6s cubic-bezier(.16,1,.3,1),
                  opacity .3s ease,
-                 margin .55s cubic-bezier(.16,1,.3,1);
+                 transform .75s cubic-bezier(.34,1.7,.5,1),
+                 margin .6s cubic-bezier(.16,1,.3,1);
     }
-    .item.abierto .foto{transform:scale(.58) translateY(-14%);}
-    .item.abierto .meta{margin-top:-16%;}
+    .item.abierto .foto{transform:scale(.52) translateY(-17%) rotate(-2.5deg);}
+    .item.abierto .meta{margin-top:-19%;}
     .item.abierto .meta .desc{
-      max-height:8em;opacity:1;margin-top:12px;
-      transition-delay:.12s,.18s,.12s;
+      max-height:10em;opacity:1;margin-top:14px;
+      transform:translateY(0) scale(1);
+      transition-delay:.1s,.16s,.16s,.1s;
     }
     /* la pista cambia según lo que puedes hacer en cada tamaño */
     .pista__ancha{display:none;}
