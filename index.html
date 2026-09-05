@@ -4,7 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>La Delicia · Catálogo</title>
-<meta name="description" content="Catálogo de sabores de La Delicia — papas fritas artesanales.">
+<meta name="description" content="Catálogo de sabores de La Delicia — papas fritas artesanales. 14 presentaciones con precios al día.">
+<link rel="canonical" href="https://prixor30-droid.github.io/catalogo-la-delicia/">
+<meta name="theme-color" content="#000000">
+
+<!-- Vista previa al compartir el enlace por WhatsApp, Facebook o Instagram.
+     og:image tiene que ser URL absoluta: con ruta relativa el recuadro sale
+     vacío. Si el repositorio cambia de nombre, hay que actualizar las tres. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="La Delicia">
+<meta property="og:title" content="La Delicia · Catálogo de sabores">
+<meta property="og:description" content="Papas fritas artesanales. 14 presentaciones con precios al día.">
+<meta property="og:url" content="https://prixor30-droid.github.io/catalogo-la-delicia/">
+<meta property="og:image" content="https://prixor30-droid.github.io/catalogo-la-delicia/og-catalogo.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Bolsas de papas fritas La Delicia: BBQ, Fosforito y Carita Feliz.">
+<meta property="og:locale" content="es_CO">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="512x512" href="favicon-512.png">
+<link rel="apple-touch-icon" href="favicon-180.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -235,13 +257,19 @@
     margin:-.14em 0 0;padding-top:.14em;
   }
   .precio{
-    display:inline-block;
+    display:inline-flex;align-items:baseline;gap:.4em;
     margin-top:10px;
     font-weight:700;font-size:14.5px;letter-spacing:.02em;
     color:#1a1410;
     background:linear-gradient(180deg,var(--gold-2),var(--gold));
     padding:6px 18px;border-radius:999px;
     box-shadow:0 6px 16px rgba(244,177,61,.3);
+  }
+  /* La mayoría se vende por docena, no por bolsa. Sin decirlo el cliente
+     entiende que una bolsa cuesta $9.000 y el precio parece disparatado. */
+  .precio .unidad{
+    font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    opacity:.6;
   }
   .girar{
     margin-top:12px;
@@ -311,6 +339,22 @@
     .hero{padding:12px 0 18px;}
   }
 
+  /* Quien pide menos movimiento en su sistema recibe el catálogo quieto:
+     el carrusel sigue funcionando y cambiando de sabor, pero sin rebotes,
+     sin entradas animadas y sin el círculo que llega deslizándose. */
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{
+      animation-duration:.01ms !important;
+      animation-iteration-count:1 !important;
+      transition-duration:.01ms !important;
+      scroll-behavior:auto !important;
+    }
+    /* las animaciones de entrada dejan estos elementos en opacity:0 hasta
+       terminar, así que hay que devolverlos a la vista explícitamente */
+    .logo,.hero__eyebrow,.hero h1,.carrusel{opacity:1;}
+    .item.activo .meta{opacity:1;transform:none;}
+  }
+
   /* Sin JS el carrusel no puede colocarse: se muestran en columna. */
   .sinjs .escena{height:auto;perspective:none;}
   .sinjs .item{position:static;transform:none;opacity:1;margin:0 auto 40px;}
@@ -341,7 +385,7 @@
 
     <div class="escena" id="escena">
 
-      <article class="item" style="--spot-c1:#ffb0cf;--spot-c2:#e8447f;">
+      <article class="item" style="--spot-c2:#17706a;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -351,12 +395,12 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">BBQ</h2>
-            <div class="precio">$9.000</div>
+            <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
       </article>
 
-      <article class="item" style="--spot-c1:#b7e08a;--spot-c2:#4f8a2e;">
+      <article class="item" style="--spot-c2:#93202f;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -366,12 +410,12 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Limón</h2>
-            <div class="precio">$9.000</div>
+            <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
       </article>
 
-      <article class="item" style="--spot-c1:#ffe98a;--spot-c2:#e0a615;">
+      <article class="item" style="--spot-c2:#24467e;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -381,12 +425,12 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Carita Feliz</h2>
-            <div class="precio">$9.000</div>
+            <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
       </article>
 
-      <article class="item" style="--spot-c1:#ffe27a;--spot-c2:#d69a12;">
+      <article class="item" style="--spot-c2:#186a72;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -396,12 +440,12 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Pollo</h2>
-            <div class="precio">$9.000</div>
+            <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
       </article>
 
-      <article class="item" style="--spot-c1:#d9a9ff;--spot-c2:#7a2fae;">
+      <article class="item" style="--spot-c2:#2c6b2e;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -411,12 +455,12 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Parrillada</h2>
-            <div class="precio">$9.000</div>
+            <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
       </article>
 
-      <article class="item" style="--spot-c1:#c7e08a;--spot-c2:#7a9a1f;">
+      <article class="item" style="--spot-c2:#24427e;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -426,12 +470,12 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Chorizo Limón</h2>
-            <div class="precio">$9.000</div>
+            <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
       </article>
 
-      <article class="item" style="--spot-c1:#9fd4ff;--spot-c2:#1f6fb8;">
+      <article class="item" style="--spot-c2:#93202f;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -441,12 +485,12 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Mayonesa</h2>
-            <div class="precio">$9.000</div>
+            <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
       </article>
 
-      <article class="item tiene-reverso" style="--spot-c1:#ffb977;--spot-c2:#c05a12;">
+      <article class="item tiene-reverso" style="--spot-c2:#175f77;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto">
@@ -464,13 +508,13 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Queso Cheddar</h2>
-            <div class="precio">$9.000</div>
+            <div class="precio">$9.000 <span class="unidad">docena</span></div>
             <div><button class="girar" type="button" aria-pressed="false">Ver reverso</button></div>
           </div>
         </div>
       </article>
 
-      <article class="item" style="--spot-c1:#ffe27a;--spot-c2:#d69a12;">
+      <article class="item" style="--spot-c2:#24467e;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -480,12 +524,12 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Almuercito Pollo</h2>
-            <div class="precio">$9.000</div>
+            <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
       </article>
 
-      <article class="item" style="--spot-c1:#c7e08a;--spot-c2:#5a8a1f;">
+      <article class="item" style="--spot-c2:#33307e;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -495,12 +539,12 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Almuercito Limón</h2>
-            <div class="precio">$9.000</div>
+            <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
       </article>
 
-      <article class="item" style="--spot-c1:#ff9fae;--spot-c2:#c21f3a;">
+      <article class="item" style="--spot-c2:#17706a;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -510,12 +554,27 @@
           <div class="meta">
             <div class="etiqueta"></div>
             <h2 class="nombre">Almuercito Picante</h2>
-            <div class="precio">$9.000</div>
+            <div class="precio">$9.000 <span class="unidad">docena</span></div>
           </div>
         </div>
       </article>
 
-      <article class="item" style="--spot-c1:#ffe9a8;--spot-c2:#d69a12;">
+      <article class="item" style="--spot-c2:#b0213a;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="fosforito.webp" type="image/webp">
+            <img src="fosforito.png" alt="La Delicia Fosforito, papas fritas en bastón" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta">140 g</div>
+            <h2 class="nombre">Fosforito</h2>
+            <div class="precio">$5.000 <span class="unidad">c/u</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="item" style="--spot-c2:#1f5a8a;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -525,12 +584,12 @@
           <div class="meta">
             <div class="etiqueta">Económico</div>
             <h2 class="nombre">Mega</h2>
-            <div class="precio">$1.700</div>
+            <div class="precio">$1.700 <span class="unidad">c/u</span></div>
           </div>
         </div>
       </article>
 
-      <article class="item" style="--spot-c1:#ffe27a;--spot-c2:#d68a12;">
+      <article class="item" style="--spot-c2:#24467e;">
         <div class="tarjeta">
           <div class="spot"></div>
           <div class="foto"><picture>
@@ -540,7 +599,7 @@
           <div class="meta">
             <div class="etiqueta">Familiar</div>
             <h2 class="nombre">Megatón Familiar</h2>
-            <div class="precio">$5.000</div>
+            <div class="precio">$5.000 <span class="unidad">c/u</span></div>
           </div>
         </div>
       </article>
@@ -554,6 +613,7 @@
 
 <footer>
   <div><b>La Delicia</b> — Papas fritas artesanales</div>
+  <div>Los precios marcados <b>docena</b> corresponden a 12 unidades; los marcados <b>c/u</b> son por bolsa.</div>
   <div>Precios sujetos a cambio sin previo aviso.</div>
 </footer>
 

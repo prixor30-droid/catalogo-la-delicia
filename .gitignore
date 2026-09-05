@@ -1,3 +1,10 @@
-# Imágenes originales sin recortar (960x1280). Son las fuentes de trabajo:
-# el sitio usa las versiones recortadas de la raíz, así que estas no se publican.
+# Imágenes originales sin recortar. Son las fuentes de trabajo: el sitio usa
+# las versiones recortadas de la raíz, así que estas no se publican.
 originales/
+
+# Copia armada para subir a mano por la web. Con git ya no hace falta, porque
+# el sitio se publica desde la raíz del repositorio.
+publicar/
+
+# Configuración local del editor, no es parte del sitio.
+.claude/
