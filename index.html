@@ -42,13 +42,21 @@
     --text-dim:#b7ac9c;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  /* Las tarjetas del carrusel se desplazan fuera de la pantalla y ensanchan el
+     documento: en tablet llegaba a 1481px dentro de una ventana de 768, y el
+     navegador encogía la página entera para que cupiera. Ponerlo solo en <body>
+     no sirve: si <html> queda en visible, el desborde se propaga al viewport
+     igual. Va en los dos. */
+  html,body{
+    margin:0;padding:0;
+    overflow-x:hidden;   /* respaldo para Safari 15 y anteriores */
+    overflow-x:clip;     /* recorta sin crear un contenedor de scroll */
+  }
   body{
     background:var(--bg);
     color:var(--text);
     font-family:'Poppins',system-ui,-apple-system,sans-serif;
     -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;
   }
   .wrap{max-width:1180px;margin:0 auto;padding:0 22px;}
 
