@@ -11,8 +11,6 @@
 <style>
   :root{
     --bg:#000000;
-    --bg-soft:#191716;
-    --card:#1c1a18;
     --line:#2c2825;
     --gold:#f4b13d;
     --gold-2:#ffd27a;
@@ -20,7 +18,6 @@
     --pink:#ff3f7e;
     --text:#f7f1e6;
     --text-dim:#b7ac9c;
-    --shadow:rgba(0,0,0,.55);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -33,240 +30,300 @@
   }
   .wrap{max-width:1180px;margin:0 auto;padding:0 22px;}
 
+  /* ---------- logo en la esquina ---------- */
+  .logo{
+    position:fixed;
+    top:16px;left:18px;
+    z-index:80;
+    display:block;
+    width:clamp(62px,8.5vw,112px);
+    pointer-events:none;
+    filter:drop-shadow(0 8px 18px rgba(0,0,0,.65));
+    opacity:0;
+    animation:riseIn .85s cubic-bezier(.16,1,.3,1) .1s forwards;
+  }
+  .logo img{width:100%;height:auto;display:block;}
+
   /* ---------- header ---------- */
   header{
-    padding:34px 0 18px;
+    padding:28px 0 10px;
     display:flex;align-items:center;justify-content:center;
   }
   .brand{
     font-family:'Anton',sans-serif;
     font-weight:400;
     letter-spacing:.03em;
-    font-size:clamp(30px,5vw,42px);
+    font-size:clamp(28px,4.6vw,40px);
     color:var(--text);
     text-transform:uppercase;
-    display:flex; align-items:baseline; gap:.35em;
+    display:flex;align-items:baseline;gap:.35em;
   }
   .brand span{color:var(--gold);}
 
   /* ---------- hero ---------- */
-  .hero{
-    text-align:center;
-    padding:34px 0 46px;
-    position:relative;
-  }
+  .hero{text-align:center;padding:18px 0 26px;}
   @keyframes riseIn{
     0%{opacity:0; transform:translateY(52px) scale(.82);}
     70%{opacity:1; transform:translateY(-6px) scale(1.03);}
     100%{opacity:1; transform:translateY(0) scale(1);}
   }
   .hero__eyebrow{
-    font-weight:700;
-    letter-spacing:.32em;
-    text-transform:uppercase;
-    font-size:12.5px;
-    color:var(--pink);
-    margin-bottom:14px;
-    opacity:0;
-    animation:riseIn .7s cubic-bezier(.16,1,.3,1) .05s forwards;
+    font-weight:700;letter-spacing:.32em;text-transform:uppercase;
+    font-size:12px;color:var(--pink);margin-bottom:12px;
+    opacity:0;animation:riseIn .7s cubic-bezier(.16,1,.3,1) .05s forwards;
   }
   .hero h1{
-    font-family:'Anton',sans-serif;
-    font-weight:400;
-    text-transform:uppercase;
-    line-height:.96;
-    letter-spacing:.01em;
-    font-size:clamp(40px,8.5vw,88px);
-    margin:0;
-    background:linear-gradient(180deg,var(--gold-2) 0%, var(--gold) 55%, var(--gold-dim) 100%);
-    -webkit-background-clip:text;
-    background-clip:text;
-    color:transparent;
+    font-family:'Anton',sans-serif;font-weight:400;
+    text-transform:uppercase;line-height:.96;letter-spacing:.01em;
+    font-size:clamp(34px,6.4vw,66px);
+    /* padding arriba para que el degradado recortado no se coma las tildes */
+    margin:-.16em 0 0;padding-top:.16em;
+    background:linear-gradient(180deg,var(--gold-2) 0%,var(--gold) 55%,var(--gold-dim) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
     filter:drop-shadow(0 10px 30px rgba(244,177,61,.18));
-    opacity:0;
-    animation:riseIn .85s cubic-bezier(.16,1,.3,1) .16s forwards;
-  }
-  .hero p{
-    max-width:520px;margin:18px auto 0;
-    color:var(--text-dim);
-    font-size:15.5px;
-    line-height:1.6;
-    opacity:0;
-    animation:riseIn .8s cubic-bezier(.16,1,.3,1) .34s forwards;
+    opacity:0;animation:riseIn .85s cubic-bezier(.16,1,.3,1) .16s forwards;
   }
 
-  /* ---------- grid ---------- */
-  .grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:26px 22px;
-    padding:10px 0 60px;
-  }
-  @media (max-width:980px){ .grid{grid-template-columns:repeat(3,1fr);} }
-  @media (max-width:680px){ .grid{grid-template-columns:repeat(2,1fr); gap:18px 12px;} }
-  @media (max-width:400px){ .grid{gap:14px 10px;} }
-
-  .card{
+  /* ================= CARRUSEL ================= */
+  .carrusel{
+    --w:clamp(215px,50vw,370px);
+    --alto-foto:calc(var(--w) * 3.7 / 3);
     position:relative;
-    padding:26px 14px 20px;
+    opacity:0;
+    animation:riseIn .9s cubic-bezier(.16,1,.3,1) .3s forwards;
+  }
+  .escena{
+    position:relative;
+    height:calc(var(--alto-foto) + 170px);
+    /* Perspectiva corta a propósito: es lo que hace que las tarjetas
+       laterales se hundan de verdad en lugar de solo encogerse. */
+    perspective:850px;
+    transform-style:preserve-3d;
+    touch-action:pan-y;
+    cursor:grab;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .escena.arrastrando{cursor:grabbing;}
+
+  .item{
+    position:absolute;
+    top:50%;left:50%;
+    width:var(--w);
+    margin:0;
+    transform-origin:50% 50%;
+    will-change:transform,opacity,filter;
+    transition:
+      transform .95s cubic-bezier(.16,1.55,.28,1),
+      opacity .5s ease,
+      filter .5s ease;
+  }
+  /* Durante el arrastre las tarjetas siguen al dedo sin suavizado. */
+  .escena.arrastrando .item{transition:none;}
+
+  .tarjeta{
+    position:relative;
     display:flex;flex-direction:column;align-items:center;
-    opacity:0; transform:translateY(110px) scale(.68) rotate(-10deg);
-    transition:opacity .9s cubic-bezier(.34,1.56,.64,1), transform .9s cubic-bezier(.34,1.56,.64,1), z-index 0s;
-    z-index:1;
   }
-  .card:nth-child(even){ transform:translateY(110px) scale(.68) rotate(10deg); }
-  .card.in{opacity:1; transform:translateY(0) scale(1) rotate(0);}
-  .card:hover{
-    transform:translateY(-20px) scale(1.07);
-    z-index:5;
-  }
-  /* Sin overflow:hidden a propósito: el resplandor mide más que la tarjeta
-     y recortarlo dejaba un rectángulo de bordes duros sobre el fondo negro. */
-  .card__bg{
-    position:absolute; inset:0;
-    z-index:0;
+  /* Rebote marcado al llegar al centro. Es solo escala y salto vertical:
+     nada de rotación, para que las tarjetas nunca se vean inclinadas. */
+  .item.activo .tarjeta{animation:entrar .95s cubic-bezier(.16,1.55,.28,1);}
+  @keyframes entrar{
+    0%  {transform:scale(.68) translateY(34px);}
+    42% {transform:scale(1.16) translateY(-18px);}
+    68% {transform:scale(.96) translateY(6px);}
+    86% {transform:scale(1.03) translateY(-2px);}
+    100%{transform:scale(1) translateY(0);}
   }
 
-  @keyframes glowPulse{
-    0%,100%{ opacity:.42; transform:translateX(-50%) scale(1); }
-    50%{ opacity:.8; transform:translateX(-50%) scale(1.14); }
+  /* Forma sólida por sabor: círculo de color plano, sin degradado ni
+     desenfoque. Entra desde la izquierda cuando el sabor toma el centro. */
+  @keyframes llegarIzquierda{
+    0%  {transform:translateX(-165%) scale(.72);opacity:0;}
+    62% {transform:translateX(-42%) scale(1.05);opacity:1;}
+    100%{transform:translateX(-50%) scale(1);opacity:1;}
   }
   .spot{
     position:absolute;
-    top:14%;
-    left:50%;
-    width:150%;
-    aspect-ratio:1.15/1;
+    top:7%;left:50%;
+    width:122%;
+    aspect-ratio:1/1;
     transform:translateX(-50%);
-    background:radial-gradient(closest-side, var(--spot-c1,#f4b13d) 0%, var(--spot-c2,#c9781f) 46%, transparent 72%);
-    opacity:.55;
-    filter:blur(1px);
+    background:var(--spot-c2,#c9781f);
+    border-radius:50%;
+    opacity:0;
     pointer-events:none;
     z-index:0;
-    animation:glowPulse 2.2s ease-in-out infinite;
     transition:opacity .35s ease;
   }
-  .card:hover .spot{ opacity:1; animation-play-state:paused; transform:translateX(-50%) scale(1.32); }
+  .item.activo .spot{
+    opacity:1;
+    animation:llegarIzquierda .85s cubic-bezier(.22,1.28,.32,1);
+  }
 
-  .photo{
-    position:relative; z-index:1;
+  .foto{
+    position:relative;z-index:1;
     width:100%;
-    aspect-ratio:3/3.7;
+    height:var(--alto-foto);
     display:flex;align-items:center;justify-content:center;
-    /* Perspectiva corta = giro con volumen. Con valores altos (1000px+) el
-       volteo parece una lámina girando, sin profundidad. */
     perspective:620px;
   }
-  .photo img{
-    max-width:100%; max-height:100%;
-    width:auto; height:auto;
-    object-fit:contain;
-    filter:drop-shadow(0 18px 22px rgba(0,0,0,.55));
-    transition:transform .45s cubic-bezier(.34,1.56,.64,1);
+  /* El <picture> necesita altura definida: si no, el max-height:100% de la
+     imagen no tiene contra qué medirse y la foto se desborda de su caja. */
+  .foto > picture{
+    width:100%;height:100%;
+    display:flex;align-items:center;justify-content:center;
   }
-  /* El zoom al pasar el ratón se excluye en las tarjetas que giran:
-     su transform pelearía con el rotateY del volteo. */
-  .card:not(.tiene-reverso):hover .photo img{transform:scale(1.2) rotate(-6deg);}
+  .foto img{
+    max-width:100%;max-height:100%;
+    width:auto;height:auto;
+    object-fit:contain;
+    filter:drop-shadow(0 22px 26px rgba(0,0,0,.6));
+  }
 
-  /* ---------- tarjeta que gira (frente / reverso) ---------- */
+  /* ---------- cara frente / reverso ---------- */
   .flip{
-    position:absolute; inset:0;
+    position:absolute;inset:0;
     transform-style:preserve-3d;
     transition:transform .68s cubic-bezier(.45,.05,.2,1);
   }
-  .card.flipped .flip{transform:rotateY(180deg);}
-
-  /* El impulso va en .photo y no en .flip: si fuera en .flip, la animación
-     pisaría el transform del rotateY. Al ir aparte, sirve para los dos
-     sentidos del giro sin tener que saber hacia dónde va. */
-  .photo.impulso{animation:acercar .68s cubic-bezier(.45,.05,.2,1);}
-  @keyframes acercar{
-    0%,100%{transform:scale(1);}
-    50%    {transform:scale(1.12);}
-  }
-  /* El backface va también en el <img>: su filter:drop-shadow lo compone en
-     una capa aparte y no hereda el del contenedor, así que sin esto se vería
-     el reverso por encima del frente. */
-  .cara, .cara img{
+  .item.volteada .flip{transform:rotateY(180deg);}
+  /* El backface va también en el <img>: su filter lo compone en una capa
+     aparte y no hereda el del contenedor. */
+  .cara,.cara img{
     backface-visibility:hidden;
     -webkit-backface-visibility:hidden;
   }
   .cara{
-    position:absolute; inset:0;
+    position:absolute;inset:0;
     display:flex;align-items:center;justify-content:center;
   }
   .cara.reverso{transform:rotateY(180deg);}
+  /* El impulso va aparte del .flip para no pisarle el rotateY,
+     y así sirve igual en los dos sentidos del giro. */
+  .foto.impulso{animation:acercar .68s cubic-bezier(.45,.05,.2,1);}
+  @keyframes acercar{
+    0%,100%{transform:scale(1);}
+    50%    {transform:scale(1.12);}
+  }
+
+  /* ---------- nombre y precio ---------- */
+  .meta{
+    position:relative;z-index:2;
+    margin-top:16px;
+    text-align:center;
+    opacity:0;
+    transform:translateY(30px) scale(.86);
+    transition:opacity .5s ease .14s,transform .6s cubic-bezier(.16,1.55,.28,1) .14s;
+  }
+  .item.activo .meta{opacity:1;transform:translateY(0) scale(1);}
+  .etiqueta{
+    display:inline-block;
+    font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--pink);
+    background:rgba(255,63,126,.12);
+    border:1px solid rgba(255,63,126,.35);
+    padding:3px 10px;border-radius:999px;
+    margin-bottom:8px;
+  }
+  .etiqueta:empty{display:none;}
+  .nombre{
+    font-family:'Anton',sans-serif;font-weight:400;
+    text-transform:uppercase;letter-spacing:.01em;
+    font-size:clamp(19px,2.6vw,27px);
+    line-height:1.1;
+    margin:-.14em 0 0;padding-top:.14em;
+  }
+  .precio{
+    display:inline-block;
+    margin-top:10px;
+    font-weight:700;font-size:14.5px;letter-spacing:.02em;
+    color:#1a1410;
+    background:linear-gradient(180deg,var(--gold-2),var(--gold));
+    padding:6px 18px;border-radius:999px;
+    box-shadow:0 6px 16px rgba(244,177,61,.3);
+  }
   .girar{
-    position:absolute; z-index:3;
-    top:14px; left:14px;
+    margin-top:12px;
     font-family:'Poppins',sans-serif;
-    font-size:10.5px;
-    font-weight:700;
-    letter-spacing:.08em;
-    text-transform:uppercase;
+    font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
     color:var(--gold);
     background:rgba(244,177,61,.12);
     border:1px solid rgba(244,177,61,.35);
-    padding:3px 9px;
-    border-radius:999px;
+    padding:5px 13px;border-radius:999px;
     cursor:pointer;
     transition:background .25s,color .25s;
   }
   .girar:hover{background:var(--gold);color:#1a1410;}
-  .tiene-reverso{cursor:pointer;}
 
-  .name{
-    position:relative; z-index:1;
-    font-family:'Anton',sans-serif;
-    font-weight:400;
-    text-transform:uppercase;
-    letter-spacing:.01em;
-    font-size:16.5px;
-    line-height:1.12;
+  /* ---------- flechas ---------- */
+  .nav{
+    position:absolute;top:calc(50% - 46px);
+    z-index:60;
+    width:52px;height:52px;
+    display:grid;place-items:center;
+    font-size:26px;line-height:1;
+    color:var(--gold);
+    background:rgba(0,0,0,.5);
+    border:1px solid rgba(244,177,61,.35);
+    border-radius:50%;
+    cursor:pointer;
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1),background .3s,color .3s;
+  }
+  .nav:hover{background:var(--gold);color:#1a1410;transform:scale(1.14);}
+  .nav:disabled{opacity:.22;cursor:default;transform:none;background:rgba(0,0,0,.5);color:var(--gold);}
+  .nav.prev{left:max(8px,calc(50% - var(--w) * 1.72));}
+  .nav.next{right:max(8px,calc(50% - var(--w) * 1.72));}
+
+  /* ---------- puntos ---------- */
+  .puntos{
+    display:flex;justify-content:center;flex-wrap:wrap;
+    gap:8px;margin-top:26px;
+  }
+  .punto{
+    width:8px;height:8px;padding:0;
+    border:0;border-radius:50%;
+    background:#3a342d;cursor:pointer;
+    transition:transform .35s cubic-bezier(.34,1.56,.64,1),background .35s;
+  }
+  .punto[aria-current="true"]{background:var(--gold);transform:scale(1.85);}
+
+  .pista{
     text-align:center;
-    margin-top:10px;
-    min-height:2.3em;
-    display:flex;align-items:center;justify-content:center;
-  }
-  .price{
-    position:relative; z-index:1;
-    margin-top:10px;
-    font-weight:700;
-    font-size:14.5px;
-    color:#1a1410;
-    background:linear-gradient(180deg,var(--gold-2),var(--gold));
-    padding:6px 16px;
-    border-radius:999px;
-    letter-spacing:.02em;
-    box-shadow:0 6px 16px rgba(244,177,61,.28);
-  }
-  .tag{
-    position:absolute; z-index:2;
-    top:14px; right:14px;
-    font-size:10.5px;
-    font-weight:700;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    color:var(--pink);
-    background:rgba(255,63,126,.12);
-    border:1px solid rgba(255,63,126,.35);
-    padding:3px 9px;
-    border-radius:999px;
+    margin-top:16px;
+    font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:#6d6558;
   }
 
   /* ---------- footer ---------- */
   footer{
     border-top:1px solid var(--line);
-    padding:26px 0 34px;
+    margin-top:44px;
+    padding:24px 0 32px;
     text-align:center;
     color:var(--text-dim);
-    font-size:12.5px;
-    line-height:1.9;
+    font-size:12.5px;line-height:1.9;
   }
   footer b{color:var(--text);}
+
+  @media (max-width:640px){
+    .nav{width:42px;height:42px;font-size:21px;}
+    .hero{padding:12px 0 18px;}
+  }
+
+  /* Sin JS el carrusel no puede colocarse: se muestran en columna. */
+  .sinjs .escena{height:auto;perspective:none;}
+  .sinjs .item{position:static;transform:none;opacity:1;margin:0 auto 40px;}
+  .sinjs .meta{opacity:1;transform:none;}
+  .sinjs .nav,.sinjs .puntos,.sinjs .pista{display:none;}
 </style>
 </head>
-<body>
+<body class="sinjs">
+
+<picture class="logo">
+  <source srcset="ladelicialogo.webp" type="image/webp">
+  <img src="ladelicialogo.png" alt="Productos La Delicia" width="420" height="412">
+</picture>
 
 <header>
   <div class="brand">LA <span>DELICIA</span></div>
@@ -276,152 +333,222 @@
   <section class="hero">
     <div class="hero__eyebrow">Catálogo de sabores</div>
     <h1>Sabor que te<br>hace feliz</h1>
-    <p>Papas fritas artesanales, hechas con receta propia. Estos son todos nuestros sabores disponibles.</p>
   </section>
 
-  <section class="grid" id="grid">
+  <section class="carrusel" id="carrusel">
+    <button class="nav prev" id="prev" type="button" aria-label="Sabor anterior">‹</button>
+    <button class="nav next" id="next" type="button" aria-label="Sabor siguiente">›</button>
 
-    <article class="card" style="--spot-c1:#ffb0cf;--spot-c2:#e8447f;">
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="bbq.webp" type="image/webp">
-        <img src="bbq.png" alt="La Delicia BBQ Dulce" loading="lazy">
-      </picture></div>
-      <div class="name">BBQ</div>
-      <div class="price">$9.000</div>
-    </article>
+    <div class="escena" id="escena">
 
-    <article class="card" style="--spot-c1:#b7e08a;--spot-c2:#4f8a2e;">
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="limon.webp" type="image/webp">
-        <img src="limon.png" alt="La Delicia Limón" loading="lazy">
-      </picture></div>
-      <div class="name">Limón</div>
-      <div class="price">$9.000</div>
-    </article>
-
-    <article class="card" style="--spot-c1:#ffe98a;--spot-c2:#e0a615;">
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="carita-feliz.webp" type="image/webp">
-        <img src="carita-feliz.png" alt="La Delicia Carita Feliz" loading="lazy">
-      </picture></div>
-      <div class="name">Carita Feliz</div>
-      <div class="price">$9.000</div>
-    </article>
-
-    <article class="card" style="--spot-c1:#ffe27a;--spot-c2:#d69a12;">
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="pollo.webp" type="image/webp">
-        <img src="pollo.png" alt="La Delicia Pollo" loading="lazy">
-      </picture></div>
-      <div class="name">Pollo</div>
-      <div class="price">$9.000</div>
-    </article>
-
-    <article class="card" style="--spot-c1:#d9a9ff;--spot-c2:#7a2fae;">
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="parrillada.webp" type="image/webp">
-        <img src="parrillada.png" alt="La Delicia Parrillada" loading="lazy">
-      </picture></div>
-      <div class="name">Parrillada</div>
-      <div class="price">$9.000</div>
-    </article>
-
-    <article class="card" style="--spot-c1:#c7e08a;--spot-c2:#7a9a1f;">
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="chorizo-limon.webp" type="image/webp">
-        <img src="chorizo-limon.png" alt="La Delicia Chorizo Limón" loading="lazy">
-      </picture></div>
-      <div class="name">Chorizo Limón</div>
-      <div class="price">$9.000</div>
-    </article>
-
-    <article class="card" style="--spot-c1:#9fd4ff;--spot-c2:#1f6fb8;">
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="mayonesa.webp" type="image/webp">
-        <img src="mayonesa.png" alt="La Delicia Mayonesa" loading="lazy">
-      </picture></div>
-      <div class="name">Mayonesa</div>
-      <div class="price">$9.000</div>
-    </article>
-
-    <article class="card tiene-reverso" style="--spot-c1:#ffb977;--spot-c2:#c05a12;">
-      <button class="girar" type="button" aria-pressed="false">Reverso</button>
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo">
-        <div class="flip">
-          <picture class="cara">
-            <source srcset="queso.webp" type="image/webp">
-            <img src="queso.png" alt="La Delicia Queso Cheddar, frente del empaque" loading="lazy">
-          </picture>
-          <picture class="cara reverso">
-            <source srcset="queso-reverso.webp" type="image/webp">
-            <img src="queso-reverso.png" alt="Queso Cheddar, reverso con información nutricional e ingredientes" loading="lazy">
-          </picture>
+      <article class="item" style="--spot-c1:#ffb0cf;--spot-c2:#e8447f;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="bbq.webp" type="image/webp">
+            <img src="bbq.png" alt="La Delicia BBQ Dulce">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta"></div>
+            <h2 class="nombre">BBQ</h2>
+            <div class="precio">$9.000</div>
+          </div>
         </div>
-      </div>
-      <div class="name">Queso Cheddar</div>
-      <div class="price">$9.000</div>
-    </article>
+      </article>
 
-    <article class="card" style="--spot-c1:#ffe27a;--spot-c2:#d69a12;">
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="almuerzo-pollo.webp" type="image/webp">
-        <img src="almuerzo-pollo.png" alt="La Delicia Almuercito Pollo" loading="lazy">
-      </picture></div>
-      <div class="name">Almuercito Pollo</div>
-      <div class="price">$9.000</div>
-    </article>
+      <article class="item" style="--spot-c1:#b7e08a;--spot-c2:#4f8a2e;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="limon.webp" type="image/webp">
+            <img src="limon.png" alt="La Delicia Limón" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta"></div>
+            <h2 class="nombre">Limón</h2>
+            <div class="precio">$9.000</div>
+          </div>
+        </div>
+      </article>
 
-    <article class="card" style="--spot-c1:#c7e08a;--spot-c2:#5a8a1f;">
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="almuerzo-limon.webp" type="image/webp">
-        <img src="almuerzo-limon.png" alt="La Delicia Almuercito Limón" loading="lazy">
-      </picture></div>
-      <div class="name">Almuercito Limón</div>
-      <div class="price">$9.000</div>
-    </article>
+      <article class="item" style="--spot-c1:#ffe98a;--spot-c2:#e0a615;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="carita-feliz.webp" type="image/webp">
+            <img src="carita-feliz.png" alt="La Delicia Carita Feliz" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta"></div>
+            <h2 class="nombre">Carita Feliz</h2>
+            <div class="precio">$9.000</div>
+          </div>
+        </div>
+      </article>
 
-    <article class="card" style="--spot-c1:#ff9fae;--spot-c2:#c21f3a;">
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="almuerzo-picante.webp" type="image/webp">
-        <img src="almuerzo-picante.png" alt="La Delicia Almuercito Picante" loading="lazy">
-      </picture></div>
-      <div class="name">Almuercito Picante</div>
-      <div class="price">$9.000</div>
-    </article>
+      <article class="item" style="--spot-c1:#ffe27a;--spot-c2:#d69a12;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="pollo.webp" type="image/webp">
+            <img src="pollo.png" alt="La Delicia Pollo" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta"></div>
+            <h2 class="nombre">Pollo</h2>
+            <div class="precio">$9.000</div>
+          </div>
+        </div>
+      </article>
 
-    <article class="card" style="--spot-c1:#ffe9a8;--spot-c2:#d69a12;">
-      <div class="tag">Económico</div>
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="mega.webp" type="image/webp">
-        <img src="mega.png" alt="La Delicia Mega" loading="lazy">
-      </picture></div>
-      <div class="name">Mega</div>
-      <div class="price">$1.700</div>
-    </article>
+      <article class="item" style="--spot-c1:#d9a9ff;--spot-c2:#7a2fae;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="parrillada.webp" type="image/webp">
+            <img src="parrillada.png" alt="La Delicia Parrillada" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta"></div>
+            <h2 class="nombre">Parrillada</h2>
+            <div class="precio">$9.000</div>
+          </div>
+        </div>
+      </article>
 
-    <article class="card" style="--spot-c1:#ffe27a;--spot-c2:#d68a12;">
-      <div class="tag">Familiar</div>
-      <div class="card__bg"><div class="spot"></div></div>
-      <div class="photo"><picture>
-        <source srcset="megaton.webp" type="image/webp">
-        <img src="megaton.png" alt="La Delicia Megatón Familiar" loading="lazy">
-      </picture></div>
-      <div class="name">Megatón Familiar</div>
-      <div class="price">$5.000</div>
-    </article>
+      <article class="item" style="--spot-c1:#c7e08a;--spot-c2:#7a9a1f;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="chorizo-limon.webp" type="image/webp">
+            <img src="chorizo-limon.png" alt="La Delicia Chorizo Limón" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta"></div>
+            <h2 class="nombre">Chorizo Limón</h2>
+            <div class="precio">$9.000</div>
+          </div>
+        </div>
+      </article>
 
+      <article class="item" style="--spot-c1:#9fd4ff;--spot-c2:#1f6fb8;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="mayonesa.webp" type="image/webp">
+            <img src="mayonesa.png" alt="La Delicia Mayonesa" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta"></div>
+            <h2 class="nombre">Mayonesa</h2>
+            <div class="precio">$9.000</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="item tiene-reverso" style="--spot-c1:#ffb977;--spot-c2:#c05a12;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto">
+            <div class="flip">
+              <picture class="cara">
+                <source srcset="queso.webp" type="image/webp">
+                <img src="queso.png" alt="La Delicia Queso Cheddar, frente del empaque" loading="lazy">
+              </picture>
+              <picture class="cara reverso">
+                <source srcset="queso-reverso.webp" type="image/webp">
+                <img src="queso-reverso.png" alt="Queso Cheddar, reverso con información nutricional e ingredientes" loading="lazy">
+              </picture>
+            </div>
+          </div>
+          <div class="meta">
+            <div class="etiqueta"></div>
+            <h2 class="nombre">Queso Cheddar</h2>
+            <div class="precio">$9.000</div>
+            <div><button class="girar" type="button" aria-pressed="false">Ver reverso</button></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="item" style="--spot-c1:#ffe27a;--spot-c2:#d69a12;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="almuerzo-pollo.webp" type="image/webp">
+            <img src="almuerzo-pollo.png" alt="La Delicia Almuercito Pollo" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta"></div>
+            <h2 class="nombre">Almuercito Pollo</h2>
+            <div class="precio">$9.000</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="item" style="--spot-c1:#c7e08a;--spot-c2:#5a8a1f;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="almuerzo-limon.webp" type="image/webp">
+            <img src="almuerzo-limon.png" alt="La Delicia Almuercito Limón" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta"></div>
+            <h2 class="nombre">Almuercito Limón</h2>
+            <div class="precio">$9.000</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="item" style="--spot-c1:#ff9fae;--spot-c2:#c21f3a;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="almuerzo-picante.webp" type="image/webp">
+            <img src="almuerzo-picante.png" alt="La Delicia Almuercito Picante" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta"></div>
+            <h2 class="nombre">Almuercito Picante</h2>
+            <div class="precio">$9.000</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="item" style="--spot-c1:#ffe9a8;--spot-c2:#d69a12;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="mega.webp" type="image/webp">
+            <img src="mega.png" alt="La Delicia Mega" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta">Económico</div>
+            <h2 class="nombre">Mega</h2>
+            <div class="precio">$1.700</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="item" style="--spot-c1:#ffe27a;--spot-c2:#d68a12;">
+        <div class="tarjeta">
+          <div class="spot"></div>
+          <div class="foto"><picture>
+            <source srcset="megaton.webp" type="image/webp">
+            <img src="megaton.png" alt="La Delicia Megatón Familiar" loading="lazy">
+          </picture></div>
+          <div class="meta">
+            <div class="etiqueta">Familiar</div>
+            <h2 class="nombre">Megatón Familiar</h2>
+            <div class="precio">$5.000</div>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="puntos" id="puntos"></div>
+    <div class="pista">Arrastra, usa las flechas o el teclado</div>
   </section>
 </div>
 
@@ -431,40 +558,154 @@
 </footer>
 
 <script>
-  var cards = document.querySelectorAll('.card');
-  if ('IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(e){
-        if (e.isIntersecting) {
-          var idx = Array.prototype.indexOf.call(cards, e.target);
-          setTimeout(function(){ e.target.classList.add('in'); }, (idx % 4) * 150);
-          io.unobserve(e.target);
-        }
+(function(){
+  document.body.classList.remove('sinjs');
+
+  var escena = document.getElementById('escena');
+  var items  = Array.prototype.slice.call(escena.querySelectorAll('.item'));
+  var puntos = document.getElementById('puntos');
+  var btnPrev = document.getElementById('prev');
+  var btnNext = document.getElementById('next');
+  var total = items.length;
+
+  /* pos es continua: durante el arrastre toma valores fraccionarios
+     para que las tarjetas sigan al dedo en vez de saltar de una en una. */
+  var pos = 0;
+  var activo = -1;
+  var arrastrando = false;
+  var inicioX = 0, inicioPos = 0, movido = false;
+
+  /* --- geometría del abanico (valores altos = efecto más marcado) --- */
+  /* SEP va alto porque la perspectiva comprime el desplazamiento lateral
+     de las tarjetas hundidas: sin compensar, se amontonan. */
+  var SEP    = 1.12;   // separación lateral, en anchos de tarjeta
+  var FONDO  = 380;    // cuánto se hunde cada paso, en px
+  var GIRO   = 0;      // 0 = las tarjetas laterales quedan planas, sin inclinar
+  var ESCALA = 0.22;   // cuánto encoge cada paso
+  var DESENF = 1.8;    // desenfoque por paso, en px
+  var VISIBLES = 3;    // tarjetas visibles a cada lado
+
+  function colocar(){
+    var ancho = items[0].offsetWidth || 240;
+    var centro = Math.round(pos);
+
+    items.forEach(function(el, i){
+      var off = i - pos;
+      var abs = Math.abs(off);
+      var fuera = abs > VISIBLES + 0.5;
+
+      el.style.transform =
+        'translate(-50%,-50%)' +
+        ' translateX(' + (off * ancho * SEP) + 'px)' +
+        ' translateZ(' + (-abs * FONDO) + 'px)' +
+        ' rotateY(' + (-off * GIRO) + 'deg)' +
+        ' scale(' + Math.max(0.34, 1 - abs * ESCALA) + ')';
+      el.style.opacity = fuera ? 0 : Math.max(0, 1 - abs * 0.3);
+      el.style.filter = abs < 0.05 ? 'none' : 'blur(' + Math.min(abs * DESENF, 5) + 'px)';
+      el.style.zIndex = String(100 - Math.round(abs * 10));
+      el.style.pointerEvents = fuera ? 'none' : 'auto';
+      el.setAttribute('aria-hidden', fuera ? 'true' : 'false');
+    });
+
+    if (centro !== activo){
+      activo = centro;
+      items.forEach(function(el, i){
+        el.classList.toggle('activo', i === activo);
+        // al salir del centro se vuelve al frente
+        if (i !== activo) el.classList.remove('volteada');
       });
-    }, {threshold:.12, rootMargin:'0px 0px -60px 0px'});
-    cards.forEach(function(c){ io.observe(c); });
-  } else {
-    cards.forEach(function(c){ c.classList.add('in'); });
+      Array.prototype.forEach.call(puntos.children, function(p, i){
+        p.setAttribute('aria-current', String(i === activo));
+      });
+      btnPrev.disabled = activo <= 0;
+      btnNext.disabled = activo >= total - 1;
+    }
   }
 
-  /* Tarjetas con reverso: giran al tocar la tarjeta o el botón.
-     El botón existe para que también funcione con teclado. */
-  document.querySelectorAll('.card.tiene-reverso').forEach(function(card){
-    var btn = card.querySelector('.girar');
-    var foto = card.querySelector('.photo');
-    function girar(){
-      var volteada = card.classList.toggle('flipped');
-      btn.textContent = volteada ? 'Frente' : 'Reverso';
-      btn.setAttribute('aria-pressed', String(volteada));
-      /* Se quita y se vuelve a poner, forzando un reflow entre medias,
-         para que la animación arranque de cero si se gira varias veces. */
-      foto.classList.remove('impulso');
-      void foto.offsetWidth;
-      foto.classList.add('impulso');
-    }
-    card.addEventListener('click', girar);
-    btn.addEventListener('click', function(e){ e.stopPropagation(); girar(); });
+  function ir(i){
+    pos = Math.max(0, Math.min(total - 1, i));
+    colocar();
+  }
+
+  /* --- puntos --- */
+  items.forEach(function(el, i){
+    var b = document.createElement('button');
+    b.className = 'punto';
+    b.type = 'button';
+    var n = el.querySelector('.nombre');
+    b.setAttribute('aria-label', n ? n.textContent : 'Sabor ' + (i + 1));
+    b.addEventListener('click', function(){ ir(i); });
+    puntos.appendChild(b);
   });
+
+  btnPrev.addEventListener('click', function(){ ir(activo - 1); });
+  btnNext.addEventListener('click', function(){ ir(activo + 1); });
+
+  window.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowLeft'){ ir(activo - 1); }
+    if (e.key === 'ArrowRight'){ ir(activo + 1); }
+  });
+
+  /* --- clic en una tarjeta: centrarla, o girarla si ya está centrada --- */
+  items.forEach(function(el, i){
+    el.addEventListener('click', function(){
+      if (movido) return;              // fue un arrastre, no un clic
+      if (i !== activo){ ir(i); return; }
+      if (el.classList.contains('tiene-reverso')) voltear(el);
+    });
+  });
+
+  function voltear(el){
+    var btn = el.querySelector('.girar');
+    var foto = el.querySelector('.foto');
+    var v = el.classList.toggle('volteada');
+    if (btn){
+      btn.textContent = v ? 'Ver frente' : 'Ver reverso';
+      btn.setAttribute('aria-pressed', String(v));
+    }
+    // se reinicia la animación para que responda a giros seguidos
+    foto.classList.remove('impulso');
+    void foto.offsetWidth;
+    foto.classList.add('impulso');
+  }
+
+  items.forEach(function(el){
+    var btn = el.querySelector('.girar');
+    if (btn) btn.addEventListener('click', function(e){ e.stopPropagation(); voltear(el); });
+  });
+
+  /* --- arrastre / deslizamiento --- */
+  escena.addEventListener('pointerdown', function(e){
+    arrastrando = true; movido = false;
+    inicioX = e.clientX; inicioPos = pos;
+    escena.classList.add('arrastrando');
+    escena.setPointerCapture(e.pointerId);
+  });
+
+  escena.addEventListener('pointermove', function(e){
+    if (!arrastrando) return;
+    var ancho = items[0].offsetWidth || 240;
+    var dx = e.clientX - inicioX;
+    if (Math.abs(dx) > 6) movido = true;
+    pos = Math.max(-0.4, Math.min(total - 0.6, inicioPos - dx / (ancho * SEP)));
+    colocar();
+  });
+
+  function soltar(){
+    if (!arrastrando) return;
+    arrastrando = false;
+    escena.classList.remove('arrastrando');
+    ir(Math.round(pos));
+    // el clic llega justo después del pointerup; se limpia en el siguiente ciclo
+    setTimeout(function(){ movido = false; }, 0);
+  }
+  escena.addEventListener('pointerup', soltar);
+  escena.addEventListener('pointercancel', soltar);
+
+  window.addEventListener('resize', colocar);
+
+  ir(0);
+})();
 </script>
 </body>
 </html>
