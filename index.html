@@ -116,7 +116,7 @@
 
   /* ================= CARRUSEL ================= */
   .carrusel{
-    --w:clamp(215px,50vw,370px);
+    --w:clamp(255px,58vw,440px);
     --alto-foto:calc(var(--w) * 3.7 / 3);
     position:relative;
     opacity:0;
@@ -155,17 +155,9 @@
     position:relative;
     display:flex;flex-direction:column;align-items:center;
   }
-  /* Rebote marcado al llegar al centro. Es solo escala y salto vertical:
-     nada de rotación, para que las tarjetas nunca se vean inclinadas. */
-  .item.activo .tarjeta{animation:entrar 1.15s cubic-bezier(.16,1.55,.28,1);}
-  @keyframes entrar{
-    0%  {transform:scale(.50) translateY(62px);}
-    36% {transform:scale(1.28) translateY(-36px);}
-    60% {transform:scale(.90) translateY(15px);}
-    78% {transform:scale(1.08) translateY(-7px);}
-    91% {transform:scale(.975) translateY(2px);}
-    100%{transform:scale(1) translateY(0);}
-  }
+  /* La tarjeta ya no rebota al llegar al centro: ese salto vertical no
+     gustaba. El movimiento de entrada lo da solo el desplazamiento del
+     carrusel, que ya lo suaviza la transición de .item. */
 
   /* Rombo de cuatro puntas por sabor: figura plana, sin degradado ni
      desenfoque. Antes era un círculo y por eso el giro no se veía: un círculo
@@ -182,8 +174,8 @@
   }
   .spot{
     position:absolute;
-    top:6%;left:50%;
-    width:126%;
+    top:5%;left:50%;
+    width:136%;
     aspect-ratio:1/1;
     transform:translateX(-50%);
     opacity:0;
