@@ -921,20 +921,30 @@
     if (e.key === 'ArrowRight'){ ir(activo + 1); }
   });
 
-  /* --- clic en una tarjeta: centrarla, o girarla si ya está centrada --- */
-  items.forEach(function(el, i){
-    el.addEventListener('click', function(){
-      if (movido) return;              // fue un arrastre, no un clic
-      if (i !== activo){ ir(i); return; }
-      if (anchoModo){
-        // en pantalla ancha la descripción ya está en la ficha, así que el
-        // clic sigue sirviendo para girar el paquete
-        if (el.classList.contains('tiene-reverso')) voltear(el);
-      } else {
-        el.classList.toggle('abierto');
-      }
-    });
-  });
+  /* --- toque sobre una tarjeta: centrarla, girarla o abrir su descripción ---
+     Va por pointerup y no por click. En táctil el click no llega de forma
+     fiable a la tarjeta (el arrastre de la escena se interpone), y por eso en
+     móvil y tablet no se abría la descripción. pointerup sí llega siempre. */
+  var ultimoToque = 0;
+
+  function tocar(destino){
+    if (!destino || !destino.closest) return;
+    var el = destino.closest('.item');
+    if (!el) return;
+    var i = items.indexOf(el);
+    if (i < 0) return;
+    ultimoToque = Date.now();
+
+    if (destino.closest('.girar')){ voltear(el); return; }
+    if (i !== activo){ ir(i); return; }
+    if (anchoModo){
+      // en pantalla ancha la descripción ya está en la ficha, así que el
+      // toque sigue sirviendo para girar el paquete
+      if (el.classList.contains('tiene-reverso')) voltear(el);
+    } else {
+      el.classList.toggle('abierto');
+    }
+  }
 
   function voltear(el){
     var btn = el.querySelector('.girar');
@@ -950,24 +960,45 @@
     foto.classList.add('impulso');
   }
 
+  /* El botón conserva su click para quien lo active con teclado (Enter o
+     espacio no producen eventos de puntero). El margen de 400ms evita que un
+     toque cuente dos veces: una por pointerup y otra por el click que sigue. */
   items.forEach(function(el){
     var btn = el.querySelector('.girar');
-    if (btn) btn.addEventListener('click', function(e){ e.stopPropagation(); voltear(el); });
+    if (btn) btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (Date.now() - ultimoToque < 400) return;
+      voltear(el);
+    });
   });
 
   /* --- arrastre / deslizamiento --- */
+  var punteroId = null;
+
+  /* No se captura el puntero aquí a propósito. Capturarlo en pointerdown hace
+     que el navegador dirija el click al elemento que captura, y entonces el
+     toque no llega nunca a la tarjeta: en móvil y tablet la descripción no se
+     abría. La captura se pide más abajo, solo cuando ya hay arrastre real. */
+  var objetivoToque = null;
+
   escena.addEventListener('pointerdown', function(e){
     arrastrando = true; movido = false;
     inicioX = e.clientX; inicioPos = pos;
+    punteroId = e.pointerId;
+    objetivoToque = e.target;      // se guarda para resolver el toque al soltar
     escena.classList.add('arrastrando');
-    escena.setPointerCapture(e.pointerId);
   });
 
   escena.addEventListener('pointermove', function(e){
     if (!arrastrando) return;
     var ancho = items[0].offsetWidth || 240;
     var dx = e.clientX - inicioX;
-    if (Math.abs(dx) > 6) movido = true;
+    if (!movido && Math.abs(dx) > 6){
+      movido = true;
+      // ya es un arrastre: ahora sí se captura, para no perder el dedo si
+      // se sale de la escena a media pasada
+      try { escena.setPointerCapture(punteroId); } catch (err) {}
+    }
     pos = Math.max(-0.4, Math.min(total - 0.6, inicioPos - dx / (ancho * SEP)));
     colocar();
   });
@@ -976,7 +1007,14 @@
     if (!arrastrando) return;
     arrastrando = false;
     escena.classList.remove('arrastrando');
+    if (punteroId !== null && escena.hasPointerCapture && escena.hasPointerCapture(punteroId)){
+      escena.releasePointerCapture(punteroId);
+    }
+    punteroId = null;
     ir(Math.round(pos));
+    // si el dedo no se movió, era un toque: se resuelve aquí, no en el click
+    if (!movido) tocar(objetivoToque);
+    objetivoToque = null;
     // el clic llega justo después del pointerup; se limpia en el siguiente ciclo
     setTimeout(function(){ movido = false; }, 0);
   }
