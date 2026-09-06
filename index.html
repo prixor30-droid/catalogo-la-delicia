@@ -410,6 +410,10 @@
     /* el paquete se va con rebote (la curva se pasa de 1 a propósito) y el
        texto sube detrás, no solo aparece */
     .foto{transition:transform .75s cubic-bezier(.34,1.56,.64,1);}
+    /* la ráfaga solo transiciona la opacidad por defecto; aquí necesita
+       también el transform para acompañar a la foto al encogerse */
+    .spot{transition:opacity .35s ease,
+                     transform .75s cubic-bezier(.34,1.56,.64,1);}
     .meta .desc{
       max-height:0;opacity:0;overflow:hidden;
       transform:translateY(30px) scale(.88);
@@ -418,8 +422,21 @@
                  transform .75s cubic-bezier(.34,1.7,.5,1),
                  margin .6s cubic-bezier(.16,1,.3,1);
     }
-    .item.abierto .foto{transform:scale(.52) translateY(-17%) rotate(-2.5deg);}
-    .item.abierto .meta{margin-top:-19%;}
+    .item.abierto .foto{transform:scale(.42) translateY(-24%) rotate(-2.5deg);}
+    /* La ráfaga encoge con la foto: si se queda a tamaño completo, el paquete
+       se hunde dentro de ella y parece que solo se alejó el producto.
+       Especificidad de cuatro clases para ganarle al .item.activo .spot que
+       fija el ángulo de reposo. */
+    .item.activo.abierto .spot{
+      transform:translateX(-50%) translateY(-13%) rotate(var(--giro,0deg)) scale(.46);
+    }
+    /* El margen tiene que viajar al mismo ritmo que el encogido de la foto.
+       Sin transición saltaba de golpe y el nombre se quedaba encima del
+       paquete los 0,75s que este tarda en achicarse. */
+    .meta{transition:opacity .55s ease .16s,
+                     transform .85s cubic-bezier(.2,1.9,.35,1) .16s,
+                     margin-top .75s cubic-bezier(.34,1.56,.64,1);}
+    .item.abierto .meta{margin-top:-26%;}
     .item.abierto .meta .desc{
       max-height:10em;opacity:1;margin-top:14px;
       transform:translateY(0) scale(1);
