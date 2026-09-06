@@ -167,9 +167,11 @@
     100%{transform:scale(1) translateY(0);}
   }
 
-  /* Ráfaga de color por sabor: figura plana, sin degradado ni desenfoque.
-     Antes era un círculo y por eso el giro no se veía: un círculo es idéntico
-     en cualquier ángulo. Las doce puntas hacen la rotación evidente.
+  /* Estrella de ocho puntas por sabor: dos cuadrados superpuestos girados 45°,
+     figura plana sin degradado ni desenfoque. Antes era un círculo y por eso el
+     giro no se veía: un círculo es idéntico en cualquier ángulo. Las puntas a
+     45° hacen la rotación evidente, y como el paso de giro es de 37° ninguna
+     postura se repite en los catorce sabores.
      Entra desde la izquierda girando y frena en su ángulo de reposo. */
   @keyframes llegarIzquierda{
     0%  {transform:translateX(-250%) scale(.48) rotate(calc(var(--giro,0deg) - 320deg));opacity:0;}
@@ -180,8 +182,8 @@
   }
   .spot{
     position:absolute;
-    top:2%;left:50%;
-    width:152%;
+    top:4%;left:50%;
+    width:138%;
     aspect-ratio:1/1;
     transform:translateX(-50%);
     opacity:0;
@@ -194,7 +196,7 @@
   .spot polygon{
     fill:var(--spot-c2,#c9781f);
     stroke:var(--spot-c2,#c9781f);
-    stroke-width:5;
+    stroke-width:3;
     stroke-linejoin:round;
   }
   /* El ángulo de reposo lo pone el JS, distinto para cada sabor, para que dos
@@ -566,9 +568,9 @@
 
     <div class="escena" id="escena">
 
-      <article class="item" style="--spot-c2:#17706a;">
+      <article class="item" style="--spot-c2:#00b5a5;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="bbq.webp" type="image/webp">
             <img src="bbq.png" alt="La Delicia BBQ Dulce">
@@ -582,9 +584,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#93202f;">
+      <article class="item" style="--spot-c2:#e62239;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="limon.webp" type="image/webp">
             <img src="limon.png" alt="La Delicia Limón" loading="lazy">
@@ -598,9 +600,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#24467e;">
+      <article class="item" style="--spot-c2:#1f6fe0;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="carita-feliz.webp" type="image/webp">
             <img src="carita-feliz.png" alt="La Delicia Carita Feliz" loading="lazy">
@@ -614,9 +616,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#186a72;">
+      <article class="item" style="--spot-c2:#00a8b5;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="pollo.webp" type="image/webp">
             <img src="pollo.png" alt="La Delicia Pollo" loading="lazy">
@@ -630,9 +632,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#2c6b2e;">
+      <article class="item" style="--spot-c2:#45b71f;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="parrillada.webp" type="image/webp">
             <img src="parrillada.png" alt="La Delicia Parrillada" loading="lazy">
@@ -646,9 +648,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#24427e;">
+      <article class="item" style="--spot-c2:#3b4fd8;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="chorizo-limon.webp" type="image/webp">
             <img src="chorizo-limon.png" alt="La Delicia Chorizo Limón" loading="lazy">
@@ -662,9 +664,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#93202f;">
+      <article class="item" style="--spot-c2:#e8452b;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="mayonesa.webp" type="image/webp">
             <img src="mayonesa.png" alt="La Delicia Mayonesa" loading="lazy">
@@ -678,9 +680,9 @@
         </div>
       </article>
 
-      <article class="item tiene-reverso" style="--spot-c2:#175f77;">
+      <article class="item tiene-reverso" style="--spot-c2:#0e86c4;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto">
             <div class="flip">
               <picture class="cara">
@@ -703,9 +705,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#24467e;">
+      <article class="item" style="--spot-c2:#3355d8;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="almuerzo-pollo.webp" type="image/webp">
             <img src="almuerzo-pollo.png" alt="La Delicia Almuercito Pollo" loading="lazy">
@@ -719,9 +721,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#33307e;">
+      <article class="item" style="--spot-c2:#7b2fd1;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="almuerzo-limon.webp" type="image/webp">
             <img src="almuerzo-limon.png" alt="La Delicia Almuercito Limón" loading="lazy">
@@ -735,9 +737,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#17706a;">
+      <article class="item" style="--spot-c2:#00b39a;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="almuerzo-picante.webp" type="image/webp">
             <img src="almuerzo-picante.png" alt="La Delicia Almuercito Picante" loading="lazy">
@@ -751,9 +753,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#b0213a;">
+      <article class="item" style="--spot-c2:#e01e37;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="fosforito.webp" type="image/webp">
             <img src="fosforito.png" alt="La Delicia Fosforito, papas fritas en bastón" loading="lazy">
@@ -767,9 +769,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#1f5a8a;">
+      <article class="item" style="--spot-c2:#1273d4;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="mega.webp" type="image/webp">
             <img src="mega.png" alt="La Delicia Mega" loading="lazy">
@@ -783,9 +785,9 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#24467e;">
+      <article class="item" style="--spot-c2:#6b34d4;">
         <div class="tarjeta">
-          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,6.0 58.3,19.1 72.0,11.9 72.6,27.4 88.1,28.0 80.9,41.7 94.0,50.0 80.9,58.3 88.1,72.0 72.6,72.6 72.0,88.1 58.3,80.9 50.0,94.0 41.7,80.9 28.0,88.1 27.4,72.6 11.9,72.0 19.1,58.3 6.0,50.0 19.1,41.7 11.9,28.0 27.4,27.4 28.0,11.9 41.7,19.1"/></svg></div>
+          <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 62.2,20.4 83.2,16.8 79.6,37.8 97.0,50.0 79.6,62.2 83.2,83.2 62.2,79.6 50.0,97.0 37.8,79.6 16.8,83.2 20.4,62.2 3.0,50.0 20.4,37.8 16.8,16.8 37.8,20.4"/></svg></div>
           <div class="foto"><picture>
             <source srcset="megaton.webp" type="image/webp">
             <img src="megaton.png" alt="La Delicia Megatón Familiar" loading="lazy">
