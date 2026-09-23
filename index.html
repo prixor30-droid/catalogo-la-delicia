@@ -1595,18 +1595,28 @@
 
     estado = { total: total, docenas: docenas, precioDoc: pd };
 
-    var distintos = productos.filter(function(p){ return p.cantidad > 0; }).length;
-    numCarrito.hidden = distintos === 0;
-    numCarrito.textContent = distintos;
+    var sueltas = 0;
+    productos.forEach(function(p){ if (!p.porDocena) sueltas += p.cantidad; });
+
+    /* En la pelotita va la cantidad que manda, no el numero de sabores: es la
+       que decide el precio y el minimo de 10. Si el pedido es solo de bolsas
+       sueltas, se muestran esas. */
+    numCarrito.hidden = (docenas + sueltas) === 0;
+    numCarrito.textContent = docenas > 0 ? docenas : sueltas;
 
     // el aviso solo tiene sentido cuando ya hay docenas marcadas
     aviso.classList.toggle('visible', docenas > 0 && docenas < MINIMO);
 
+    /* El cliente no deberia tener que contar: aqui se le dice cuanto lleva. */
+    var partes = [];
+    if (docenas > 0) partes.push(docenas + (docenas === 1 ? ' docena' : ' docenas'));
+    if (sueltas > 0) partes.push(sueltas + (sueltas === 1 ? ' bolsa' : ' bolsas'));
+    if (docenas > 0) partes.push(pesos(pd) + ' la docena');
+
     var texto;
-    if (!WHATSAPP)          texto = 'Falta poner el numero de WhatsApp';
-    else if (docenas > 0)   texto = docenas + (docenas === 1 ? ' docena' : ' docenas') +
-                                    ' a ' + pesos(pd) + ' c/u';
-    else                    texto = 'Productos por unidad';
+    if (!WHATSAPP)        texto = 'Falta poner el numero de WhatsApp';
+    else if (partes.length) texto = partes.join(' · ');
+    else                  texto = 'Sin productos';
 
     detalle.innerHTML = '<b>' + pesos(total) + '</b>' + texto;
     pintarBoton();
@@ -1646,6 +1656,20 @@
       l.push(p.nombre + ': ' + p.cantidad + ' x ' + pesos(p.precio) +
              ' = ' + pesos(p.cantidad * p.precio));
     });
+    /* Una linea con la cuenta hecha, para no contar renglon por renglon ni de
+       este lado ni del tuyo al despachar. */
+    var sueltasMsj = 0;
+    productos.forEach(function(p){ if (!p.porDocena) sueltasMsj += p.cantidad; });
+    var cuenta = [];
+    if (estado.docenas > 0){
+      cuenta.push(estado.docenas + (estado.docenas === 1 ? ' docena' : ' docenas') +
+                  ' (' + (estado.docenas * 12) + ' paquetes)');
+    }
+    if (sueltasMsj > 0){
+      cuenta.push(sueltasMsj + (sueltasMsj === 1 ? ' bolsa suelta' : ' bolsas sueltas'));
+    }
+    if (cuenta.length) l.push('En total: ' + cuenta.join(' y '));
+
     l.push('');
     l.push('TOTAL: ' + pesos(estado.total));
 
