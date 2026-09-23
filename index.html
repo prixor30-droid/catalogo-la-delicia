@@ -682,13 +682,15 @@
     background:none;background-color:rgba(255,255,255,.07);
     color:var(--text-dim);box-shadow:none;
   }
+  .secundarios{display:flex;gap:9px;margin:14px 0 4px;}
   .secundario{
-    display:block;width:100%;margin:14px 0 4px;
+    flex:1 1 0;min-width:0;
     font-family:'Poppins',sans-serif;font-weight:600;font-size:13px;
     color:var(--text);background:transparent;border:1px solid var(--line);
     border-radius:12px;padding:12px 16px;cursor:pointer;
   }
   .secundario:active{background:rgba(255,255,255,.06);}
+  @media (max-width:340px){ .secundarios{flex-direction:column;} }
   .secundario[disabled]{opacity:.5;cursor:default;}
   .res-falta{
     display:block;margin-top:2px;color:var(--gold);font-weight:600;
@@ -1093,9 +1095,10 @@
                  placeholder="300 123 4567" maxlength="20">
         </label>
 
-        <button class="secundario" id="bajar-comprobante" type="button">
-          Descargar comprobante
-        </button>
+        <div class="secundarios">
+          <button class="secundario" id="bajar-comprobante" type="button">Descargar</button>
+          <button class="secundario" id="imprimir-comprobante" type="button">Imprimir</button>
+        </div>
       </div>
     </div>
     <div class="resumen" id="resumen">
@@ -1973,6 +1976,37 @@
     setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
   }
 
+  /* Imprime sin pasar por la descarga. Va en un marco escondido y no en una
+     ventana nueva porque el navegador del celular bloquea las ventanas que no
+     nacen de un toque directo. El ancho de 80 mm es el del rollo de las
+     impresoras de tirilla; en hoja normal sale centrado. */
+  function imprimir(img){
+    var url = URL.createObjectURL(img.blob);
+    var marco = document.createElement('iframe');
+    marco.setAttribute('aria-hidden', 'true');
+    marco.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+    marco.srcdoc =
+      '<!doctype html><html><head><meta charset="utf-8">' +
+      '<style>@page{margin:6mm}html,body{margin:0;padding:0}' +
+      'img{width:80mm;display:block;margin:0 auto}</style></head>' +
+      '<body><img src="' + url + '"></body></html>';
+
+    marco.onload = function(){
+      var v = marco.contentWindow;
+      var im = marco.contentDocument.images[0];
+      var lanzar = function(){
+        try { v.focus(); v.print(); } catch (e) {}
+        // el marco se queda un rato: quitarlo de una cancela la impresion
+        setTimeout(function(){
+          marco.remove();
+          URL.revokeObjectURL(url);
+        }, 60000);
+      };
+      if (im && !im.complete) im.onload = lanzar; else lanzar();
+    };
+    document.body.appendChild(marco);
+  }
+
   function porTexto(){
     window.open('https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(mensaje()),
                 '_blank', 'noopener');
@@ -2000,30 +2034,48 @@
 
   /* El comprobante queda aparte, para el que quiera guardarlo. */
   var btnBajar = document.getElementById('bajar-comprobante');
-  btnBajar.addEventListener('click', function(){
+  /* Sin productos o sin datos no hay comprobante que valga: saldria un ticket
+     sin nombre ni direccion. Vale para descargar y para imprimir. */
+  function listoParaComprobante(){
     if (!estado.total){
       detalle.innerHTML = '<b>' + pesos(estado.total) + '</b>' +
                           'Marca primero lo que vas a pedir';
-      return;
+      return false;
     }
     var faltan = faltantes();
     if (faltan.length){
       faltan.forEach(function(k){ campos[k].classList.add('falta'); });
       campos[faltan[0]].scrollIntoView({ block: 'center', behavior: 'smooth' });
       campos[faltan[0]].focus({ preventScroll: true });
-      return;
+      return false;
     }
+    return true;
+  }
 
-    var etiqueta = btnBajar.textContent;
-    btnBajar.disabled = true;
-    btnBajar.textContent = 'Armando...';
-    comprobante().then(function(img){
-      descargar(img);
-    }).catch(function(){}).then(function(){
-      btnBajar.disabled = false;
-      btnBajar.textContent = etiqueta;
-    });
+  btnBajar.addEventListener('click', function(){
+    if (!listoParaComprobante()) return;
+    armar(btnBajar, descargar);
   });
+
+  document.getElementById('imprimir-comprobante')
+    .addEventListener('click', function(){
+      if (!listoParaComprobante()) return;
+      armar(this, imprimir);
+    });
+
+  /* Dibuja el comprobante y se lo pasa a quien lo pidio, descargar o
+     imprimir, mientras el boton avisa que esta trabajando. */
+  function armar(boton, hacer){
+    var etiqueta = boton.textContent;
+    boton.disabled = true;
+    boton.textContent = 'Armando...';
+    comprobante().then(function(img){
+      hacer(img);
+    }).catch(function(){}).then(function(){
+      boton.disabled = false;
+      boton.textContent = etiqueta;
+    });
+  }
 
   /* --- abrir y cerrar la hoja --- */
   var ultimoFoco = null;
