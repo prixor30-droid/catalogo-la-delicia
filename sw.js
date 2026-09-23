@@ -1,9 +1,7 @@
 /* Service worker del catálogo de La Delicia.
 
-   Sirve para dos cosas: que el catálogo se pueda instalar como aplicación en
-   el celular (Android solo ofrece "Instalar" si la página tiene uno) y que
-   abra al instante y siga funcionando donde no hay señal, que es justo lo que
-   pasa dentro de muchas tiendas.
+   Sirve para que el catálogo abra al instante y siga funcionando donde no hay
+   señal, que es justo lo que pasa dentro de muchas tiendas.
 
    La regla importante está en cómo se guarda cada cosa:
 
@@ -14,7 +12,7 @@
      revisan por detrás. Si se reemplazó una foto sin cambiarle el nombre, la
      nueva entra en la siguiente apertura. */
 
-var CACHE = 'la-delicia-v1';
+var CACHE = 'la-delicia-v2';
 
 /* Lo mínimo para que el catálogo abra sin señal la primera vez. Las fotos no
    van aquí: son 1,5 MB y se irían a bajar todas de golpe en la instalación.
@@ -22,8 +20,6 @@ var CACHE = 'la-delicia-v1';
 var BASE = [
   './',
   './index.html',
-  './manifest.webmanifest',
-  './favicon-192.png',
   './favicon-512.png',
   './ladelicialogo.webp'
 ];
