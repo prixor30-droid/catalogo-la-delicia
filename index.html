@@ -528,6 +528,81 @@
     }
     .escala dd{margin:0;}
   }
+  /* ================= PEDIDOS =================
+     Todo esto arranca oculto y solo aparece con el enlace de pedidos. El
+     cliente comun no ve carrito ni totales: para el el catalogo sigue siendo
+     informativo. */
+  .pedido{max-width:660px;margin:40px auto 0;padding:0 18px;}
+  .pedido h2{
+    font-family:'Anton',sans-serif;font-weight:400;
+    font-size:clamp(19px,4.8vw,27px);letter-spacing:.06em;text-transform:uppercase;
+    margin:0 0 6px;color:var(--text);text-align:center;
+  }
+  .pedido__nota{
+    margin:0 0 18px;color:var(--text-dim);font-size:13px;line-height:1.6;
+    text-align:center;
+  }
+  .fila-pedido{
+    display:grid;grid-template-columns:38px 1fr auto auto;
+    align-items:center;gap:10px;
+    padding:9px 0;border-bottom:1px solid var(--line);
+  }
+  .fila-pedido.tiene{background:rgba(244,177,61,.05);}
+  .fila-pedido img{width:38px;height:38px;object-fit:contain;}
+  .fp-nombre{font-size:13.5px;font-weight:600;line-height:1.3;}
+  .fp-nombre span{
+    display:block;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--text-dim);
+  }
+  .paso{display:flex;align-items:center;gap:2px;}
+  .paso button{
+    width:30px;height:30px;border:1px solid var(--line);background:transparent;
+    color:var(--text);font-size:17px;line-height:1;border-radius:8px;cursor:pointer;
+    font-family:inherit;
+  }
+  .paso button:active{background:rgba(255,255,255,.08);}
+  .paso input{
+    width:38px;height:30px;text-align:center;
+    background:transparent;border:0;color:var(--text);
+    font-family:inherit;font-size:14px;font-weight:700;
+  }
+  /* Chrome y Firefox le ponen flechitas al input numerico y no caben */
+  .paso input::-webkit-outer-spin-button,
+  .paso input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .fp-sub{
+    min-width:66px;text-align:right;font-size:13px;font-weight:700;
+    color:var(--text-dim);
+  }
+  .fila-pedido.tiene .fp-sub{color:var(--gold);}
+
+  /* Barra de total: se queda pegada abajo mientras el cliente arma el pedido */
+  .resumen{
+    position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:rgba(8,8,8,.96);border-top:1px solid var(--line);
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+    backdrop-filter:blur(8px);
+  }
+  .resumen__caja{
+    max-width:660px;margin:0 auto;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  .resumen__detalle{font-size:11.5px;color:var(--text-dim);line-height:1.45;}
+  .resumen__detalle b{display:block;font-size:17px;color:var(--text);font-weight:700;}
+  .enviar{
+    flex:0 0 auto;
+    font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;
+    color:#1a1410;background:linear-gradient(180deg,var(--gold-2),var(--gold));
+    border:0;border-radius:999px;padding:11px 18px;cursor:pointer;
+    box-shadow:0 6px 16px rgba(244,177,61,.3);
+  }
+  .enviar:active{transform:translateY(1px);}
+  .enviar[disabled]{opacity:.45;cursor:default;box-shadow:none;}
+  /* mientras la barra esta arriba, el pie no puede quedar tapado */
+  body.con-resumen{padding-bottom:86px;}
+  @media (max-width:380px){
+    .fila-pedido{grid-template-columns:1fr auto auto;}
+    .fila-pedido img{display:none;}
+  }
   footer{
     border-top:1px solid var(--line);
     margin-top:44px;
@@ -874,6 +949,20 @@
   </dl>
 </section>
 
+<section class="pedido" id="pedido" hidden>
+  <h2>Arma tu pedido</h2>
+  <p class="pedido__nota">Marca las cantidades y al final te abrimos WhatsApp con
+    el pedido escrito. El precio por docena se ajusta solo según el total.</p>
+  <div id="filas-pedido"></div>
+</section>
+
+<div class="resumen" id="resumen" hidden>
+  <div class="resumen__caja">
+    <div class="resumen__detalle" id="resumen-detalle"><b>$0</b>Sin productos</div>
+    <button class="enviar" id="enviar" type="button" disabled>Enviar por WhatsApp</button>
+  </div>
+</div>
+
 <footer>
   <div><b>La Delicia</b> — Papas fritas artesanales</div>
   <div>Los precios marcados <b>docena</b> corresponden a 12 unidades; los marcados <b>c/u</b> son por bolsa.</div>
@@ -1193,6 +1282,201 @@
 
   medirModo();
   ir(0);
+})();
+
+/* ===================== PEDIDOS =====================
+   Solo se enciende con el enlace de pedidos (?pedidos=1). Sin eso, el catalogo
+   es el mismo de siempre y el cliente comun no ve carrito ni totales.
+
+   No es una clave: quien reciba el enlace puede reenviarlo. Sirve para separar
+   al que solo mira del que compra al por mayor, no para proteger nada. */
+(function(){
+  /* Numero al que llegan los pedidos, en formato internacional y sin signos:
+     57 (Colombia) + el celular. Ejemplo: 573001234567.
+     Mientras este vacio, el boton de enviar queda apagado a proposito. */
+  var WHATSAPP = '';
+
+  /* Escala por cantidad. Se cuenta sumando TODAS las docenas del pedido y no
+     sabor por sabor: 6 docenas de BBQ y 6 de Limon son 12, y el pedido entero
+     baja a $9.500. Tiene que coincidir con el bloque "Precio por cantidad". */
+  var ESCALA = [
+    { desde: 41, precio: 9000 },
+    { desde: 11, precio: 9500 },
+    { desde: 1,  precio: 10000 }
+  ];
+
+  var LLAVE = 'ladelicia-pedido';
+
+  var seccion    = document.getElementById('pedido');
+  var contenedor = document.getElementById('filas-pedido');
+  var barra      = document.getElementById('resumen');
+  var detalle    = document.getElementById('resumen-detalle');
+  var btnEnviar  = document.getElementById('enviar');
+  if (!seccion || !contenedor) return;
+
+  /* --- se enciende? --- */
+  var pedidoEnUrl = false;
+  try { pedidoEnUrl = new URLSearchParams(location.search).get('pedidos') === '1'; } catch (e) {}
+
+  var encendido = pedidoEnUrl;
+  try {
+    if (pedidoEnUrl) localStorage.setItem(LLAVE + '-activo', '1');
+    // si ya entro alguna vez con el enlace, no se le vuelve a pedir
+    else if (localStorage.getItem(LLAVE + '-activo') === '1') encendido = true;
+  } catch (e) {}
+  if (!encendido) return;
+
+  /* --- productos, leidos de las mismas tarjetas del catalogo --------------
+     Asi los precios siguen viviendo en un solo sitio: si se cambia el de una
+     tarjeta, el del pedido cambia solo. */
+  var productos = [];
+  Array.prototype.forEach.call(document.querySelectorAll('.item'), function(el){
+    var precioEl = el.querySelector('.precio');
+    if (!precioEl) return;
+    var unidadEl = el.querySelector('.precio .unidad');
+    var fuente   = el.querySelector('picture source');
+    productos.push({
+      nombre: el.querySelector('.nombre').textContent.trim(),
+      precio: parseInt(precioEl.textContent.replace(/[^0-9]/g, ''), 10) || 0,
+      porDocena: !!(unidadEl && /docena/i.test(unidadEl.textContent)),
+      foto: fuente ? fuente.getAttribute('srcset') : '',
+      cantidad: 0
+    });
+  });
+
+  // lo que el cliente habia marcado antes de cerrar
+  try {
+    var salvado = JSON.parse(localStorage.getItem(LLAVE) || '{}');
+    productos.forEach(function(p){
+      var n = parseInt(salvado[p.nombre], 10);
+      if (n > 0) p.cantidad = Math.min(n, 999);
+    });
+  } catch (e) {}
+
+  function pesos(n){ return '$' + n.toLocaleString('es-CO'); }
+
+  function precioDocena(totalDocenas){
+    for (var i = 0; i < ESCALA.length; i++){
+      if (totalDocenas >= ESCALA[i].desde) return ESCALA[i].precio;
+    }
+    return ESCALA[ESCALA.length - 1].precio;
+  }
+
+  /* --- filas --- */
+  productos.forEach(function(p){
+    var fila = document.createElement('div');
+    fila.className = 'fila-pedido';
+    fila.innerHTML =
+      '<img src="' + p.foto + '" alt="" loading="lazy">' +
+      '<div class="fp-nombre">' + p.nombre +
+        '<span>' + (p.porDocena ? 'por docena' : pesos(p.precio) + ' c/u') + '</span></div>' +
+      '<div class="paso">' +
+        '<button type="button" class="menos" aria-label="Quitar uno de ' + p.nombre + '">&minus;</button>' +
+        '<input class="cant" type="number" min="0" max="999" inputmode="numeric" value="' +
+          p.cantidad + '" aria-label="Cantidad de ' + p.nombre + '">' +
+        '<button type="button" class="mas" aria-label="Agregar uno de ' + p.nombre + '">+</button>' +
+      '</div>' +
+      '<div class="fp-sub">' + pesos(0) + '</div>';
+    contenedor.appendChild(fila);
+
+    p.fila  = fila;
+    p.campo = fila.querySelector('.cant');
+    p.sub   = fila.querySelector('.fp-sub');
+    p.marca = fila.querySelector('.fp-nombre span');
+
+    fila.querySelector('.menos').addEventListener('click', function(){
+      p.cantidad = Math.max(0, p.cantidad - 1);
+      p.campo.value = p.cantidad;
+      recalcular();
+    });
+    fila.querySelector('.mas').addEventListener('click', function(){
+      p.cantidad = Math.min(999, p.cantidad + 1);
+      p.campo.value = p.cantidad;
+      recalcular();
+    });
+    p.campo.addEventListener('input', function(){
+      var n = parseInt(p.campo.value, 10);
+      p.cantidad = (isNaN(n) || n < 0) ? 0 : Math.min(999, n);
+      recalcular();
+    });
+    // si quedo vacio o con basura, se normaliza al salir del campo
+    p.campo.addEventListener('blur', function(){ p.campo.value = p.cantidad; });
+  });
+
+  var estado = { total: 0, docenas: 0, precioDoc: 10000 };
+
+  function recalcular(){
+    var docenas = 0;
+    productos.forEach(function(p){ if (p.porDocena) docenas += p.cantidad; });
+
+    var pd = precioDocena(docenas);
+    var total = 0;
+
+    productos.forEach(function(p){
+      var sub = p.cantidad * (p.porDocena ? pd : p.precio);
+      total += sub;
+      p.sub.textContent = pesos(sub);
+      p.fila.classList.toggle('tiene', p.cantidad > 0);
+      // el precio de cada sabor se mueve solo al cruzar un escalon
+      if (p.porDocena) p.marca.textContent = docenas > 0 ? pesos(pd) + ' la docena' : 'por docena';
+    });
+
+    estado = { total: total, docenas: docenas, precioDoc: pd };
+
+    var hay = productos.some(function(p){ return p.cantidad > 0; });
+    barra.hidden = !hay;
+    document.body.classList.toggle('con-resumen', hay);
+    btnEnviar.disabled = !hay || !WHATSAPP;
+
+    var texto;
+    if (!WHATSAPP)          texto = 'Falta poner el numero de WhatsApp';
+    else if (docenas > 0)   texto = docenas + (docenas === 1 ? ' docena' : ' docenas') +
+                                    ' a ' + pesos(pd) + ' c/u';
+    else                    texto = 'Productos por unidad';
+
+    detalle.innerHTML = '<b>' + pesos(total) + '</b>' + texto;
+
+    try {
+      var guardar = {};
+      productos.forEach(function(p){ if (p.cantidad > 0) guardar[p.nombre] = p.cantidad; });
+      localStorage.setItem(LLAVE, JSON.stringify(guardar));
+    } catch (e) {}
+  }
+
+  /* --- el mensaje que llega al WhatsApp --- */
+  function mensaje(){
+    var l = ['Hola La Delicia, quiero hacer este pedido:', ''];
+
+    productos.forEach(function(p){
+      if (!p.cantidad) return;
+      var u = p.porDocena ? (p.cantidad === 1 ? 'docena'  : 'docenas')
+                          : (p.cantidad === 1 ? 'unidad'  : 'unidades');
+      l.push('- ' + p.nombre + ': ' + p.cantidad + ' ' + u);
+    });
+
+    l.push('');
+    if (estado.docenas > 0){
+      l.push('Docenas: ' + estado.docenas + ' x ' + pesos(estado.precioDoc) +
+             ' = ' + pesos(estado.docenas * estado.precioDoc));
+    }
+    productos.forEach(function(p){
+      if (!p.cantidad || p.porDocena) return;
+      l.push(p.nombre + ': ' + p.cantidad + ' x ' + pesos(p.precio) +
+             ' = ' + pesos(p.cantidad * p.precio));
+    });
+    l.push('');
+    l.push('TOTAL: ' + pesos(estado.total));
+    return l.join('\n');
+  }
+
+  btnEnviar.addEventListener('click', function(){
+    if (!WHATSAPP || !estado.total) return;
+    window.open('https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(mensaje()),
+                '_blank', 'noopener');
+  });
+
+  seccion.hidden = false;
+  recalcular();
 })();
 
 /* El service worker guarda el catalogo en el celular: abre al instante y sirve
