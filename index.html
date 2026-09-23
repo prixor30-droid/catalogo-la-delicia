@@ -1685,6 +1685,273 @@
     return l.join('\n');
   }
 
+  /* ---------------------------------------------------------------------
+     Comprobante en imagen
+
+     WhatsApp no recibe archivos por un enlace wa.me: eso solo manda texto.
+     Lo que si funciona es compartir desde el navegador (navigator.share con
+     archivos), que abre la bandeja del celular y ahi el cliente escoge
+     WhatsApp. Donde eso no exista (computador, navegadores viejos) se cae al
+     enlace de texto de siempre y ademas se descarga la imagen.
+
+     El ticket se dibuja en un canvas y no con una libreria: son cuatro clases
+     de texto y dos lineas, no vale la pena bajar 200 KB, y asi sigue
+     funcionando sin senal como el resto del catalogo. */
+  var LOGO = 'logo-recibo.png';
+  var NIT  = '37005108-4';
+
+  var logoCargado = null;
+  function cargarLogo(){
+    if (logoCargado) return logoCargado;
+    logoCargado = new Promise(function(listo){
+      var im = new Image();
+      im.onload  = function(){ listo(im); };
+      im.onerror = function(){ listo(null); };   // sin logo el ticket igual sale
+      im.src = LOGO;
+    });
+    return logoCargado;
+  }
+
+  function dosDigitos(n){ return (n < 10 ? '0' : '') + n; }
+
+  function referencia(f){
+    return 'PD-' + String(f.getFullYear()).slice(2) + dosDigitos(f.getMonth() + 1) +
+           dosDigitos(f.getDate()) + '-' + dosDigitos(f.getHours()) + dosDigitos(f.getMinutes());
+  }
+
+  /* Parte un texto en renglones que quepan en el ancho dado. */
+  function envolver(ctx, texto, ancho){
+    var palabras = String(texto).split(/\s+/);
+    var lineas = [], actual = '';
+    for (var i = 0; i < palabras.length; i++){
+      var prueba = actual ? actual + ' ' + palabras[i] : palabras[i];
+      if (ctx.measureText(prueba).width > ancho && actual){
+        lineas.push(actual);
+        actual = palabras[i];
+      } else {
+        actual = prueba;
+      }
+    }
+    if (actual) lineas.push(actual);
+    return lineas;
+  }
+
+  /* Dibuja el ticket. Con medir=true no pinta nada: solo devuelve el alto que
+     va a ocupar, que depende de cuantos sabores lleve y de cuanto ocupe la
+     direccion. */
+  function ticket(ctx, datos, logo, medir){
+    var W = 380, padX = 22, anchoUtil = W - padX * 2;
+    var y = 26;
+    var gris = '#455A64', oscuro = '#0D1B2A', texto = '#263238';
+
+    function centrado(t, fuente, color, salto){
+      if (!medir){
+        ctx.font = fuente; ctx.fillStyle = color; ctx.textAlign = 'center';
+        ctx.fillText(t, W / 2, y);
+      }
+      y += salto;
+    }
+    function izquierda(t, fuente, color, salto){
+      if (!medir){
+        ctx.font = fuente; ctx.fillStyle = color; ctx.textAlign = 'left';
+        ctx.fillText(t, padX, y);
+      }
+      y += salto;
+    }
+    function punteada(){
+      if (!medir){
+        ctx.strokeStyle = '#9AA5B1'; ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(padX, y); ctx.lineTo(W - padX, y); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      y += 14;
+    }
+
+    // logo
+    if (logo){
+      var anchoLogo = 190, altoLogo = logo.height * (anchoLogo / logo.width);
+      if (!medir) ctx.drawImage(logo, (W - anchoLogo) / 2, y, anchoLogo, altoLogo);
+      y += altoLogo + 14;
+    } else {
+      y += 4;
+    }
+
+    centrado('PRODUCTOS LA DELICIA', '800 15px Poppins, Arial, sans-serif', oscuro, 15);
+    centrado('NIT: ' + NIT, '400 11px Poppins, Arial, sans-serif', gris, 14);
+    /* Dice "comprobante de pedido" y no "factura": una factura de venta en
+       Colombia va numerada y autorizada por la DIAN, y la de verdad la emite
+       la app de inventario cuando la venta se hace. */
+    centrado('Comprobante de pedido', '600 11px Poppins, Arial, sans-serif', gris, 14);
+    centrado('No. ' + datos.ref, '400 11px Poppins, Arial, sans-serif', gris, 10);
+
+    punteada();
+
+    izquierda('Fecha: ' + datos.fecha, '400 11.5px Poppins, Arial, sans-serif', texto, 16);
+    izquierda('Local: ' + datos.local, '400 11.5px Poppins, Arial, sans-serif', texto, 16);
+
+    if (!medir) ctx.font = '400 11.5px Poppins, Arial, sans-serif';
+    else ctx.font = '400 11.5px Poppins, Arial, sans-serif';
+    var dir = envolver(ctx, 'Direccion: ' + datos.dir, anchoUtil);
+    for (var d = 0; d < dir.length; d++){
+      izquierda(dir[d], '400 11.5px Poppins, Arial, sans-serif', texto, 16);
+    }
+    izquierda('Telefono: ' + datos.tel, '400 11.5px Poppins, Arial, sans-serif', texto, 10);
+
+    punteada();
+
+    // sabores
+    for (var i = 0; i < datos.items.length; i++){
+      var it = datos.items[i];
+      if (!medir){
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.arc(padX + 4, y - 4, 3.5, 0, Math.PI * 2); ctx.fill();
+      }
+      if (!medir){
+        ctx.font = '600 11.5px Poppins, Arial, sans-serif';
+        ctx.fillStyle = oscuro; ctx.textAlign = 'left';
+        ctx.fillText(it.nombre.toUpperCase(), padX + 14, y);
+      }
+      y += 15;
+
+      if (!medir){
+        ctx.font = '400 11.5px Poppins, Arial, sans-serif';
+        ctx.fillStyle = gris;
+        ctx.textAlign = 'left';  ctx.fillText(it.detalle, padX, y);
+        ctx.textAlign = 'right'; ctx.fillText(it.total, W - padX, y);
+      }
+      y += 9;
+
+      if (!medir && i < datos.items.length - 1){
+        ctx.strokeStyle = '#E0E0E0'; ctx.lineWidth = 1;
+        ctx.setLineDash([1, 3]);
+        ctx.beginPath(); ctx.moveTo(padX, y); ctx.lineTo(W - padX, y); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      y += 10;
+    }
+
+    punteada();
+
+    if (datos.cuenta){
+      izquierda(datos.cuenta, '600 11px Poppins, Arial, sans-serif', gris, 16);
+    }
+
+    // total, entre dos rayas gruesas como en la app
+    y += 2;
+    if (!medir){
+      ctx.strokeStyle = oscuro; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(padX, y); ctx.lineTo(W - padX, y); ctx.stroke();
+    }
+    y += 20;
+    if (!medir){
+      ctx.font = '800 16px Poppins, Arial, sans-serif'; ctx.fillStyle = oscuro;
+      ctx.textAlign = 'left';  ctx.fillText('TOTAL', padX, y);
+      ctx.textAlign = 'right'; ctx.fillText(datos.total, W - padX, y);
+    }
+    y += 8;
+    if (!medir){
+      ctx.strokeStyle = oscuro; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(padX, y); ctx.lineTo(W - padX, y); ctx.stroke();
+    }
+    y += 16;
+
+    if (datos.nota){
+      ctx.font = '400 10.5px Poppins, Arial, sans-serif';
+      var nl = envolver(ctx, datos.nota, anchoUtil);
+      for (var k = 0; k < nl.length; k++){
+        centrado(nl[k], '400 10.5px Poppins, Arial, sans-serif', '#8a5a17', 14);
+      }
+      y += 4;
+    }
+
+    punteada();
+    centrado('¡Gracias por su pedido!', '400 11px Poppins, Arial, sans-serif', '#78909C', 0);
+    y += 22;
+
+    return y;
+  }
+
+  /* Arma la imagen del comprobante y la devuelve como archivo PNG. */
+  function comprobante(){
+    var ahora = new Date();
+    var sueltas = 0;
+    productos.forEach(function(p){ if (!p.porDocena) sueltas += p.cantidad; });
+
+    var items = [];
+    productos.forEach(function(p){
+      if (!p.cantidad) return;
+      var unitario = p.porDocena ? estado.precioDoc : p.precio;
+      var unidad = p.porDocena ? (p.cantidad === 1 ? 'docena' : 'docenas')
+                               : (p.cantidad === 1 ? 'bolsa'  : 'bolsas');
+      items.push({
+        nombre: p.nombre,
+        detalle: p.cantidad + ' ' + unidad + ' × ' + pesos(unitario),
+        total: pesos(p.cantidad * unitario)
+      });
+    });
+
+    var cuenta = [];
+    if (estado.docenas > 0){
+      cuenta.push(estado.docenas + (estado.docenas === 1 ? ' docena' : ' docenas') +
+                  ' (' + (estado.docenas * 12) + ' paquetes)');
+    }
+    if (sueltas > 0){
+      cuenta.push(sueltas + (sueltas === 1 ? ' bolsa suelta' : ' bolsas sueltas'));
+    }
+
+    var datos = {
+      ref: referencia(ahora),
+      fecha: ahora.toLocaleDateString('es-CO') + ' · ' +
+             dosDigitos(ahora.getHours()) + ':' + dosDigitos(ahora.getMinutes()),
+      local: campos.local.value.trim(),
+      dir:   campos.dir.value.trim(),
+      tel:   campos.tel.value.trim(),
+      items: items,
+      cuenta: cuenta.length ? 'En total: ' + cuenta.join(' y ') : '',
+      total: pesos(estado.total),
+      nota: (estado.docenas > 0 && estado.docenas < MINIMO)
+              ? 'Pedido de menos de ' + MINIMO + ' docenas: la entrega puede tardar hasta 4 dias.'
+              : ''
+    };
+
+    return cargarLogo().then(function(logo){
+      var medidor = document.createElement('canvas').getContext('2d');
+      var alto = ticket(medidor, datos, logo, true);
+
+      // x2 para que no salga borrosa al verla en el celular
+      var escala = 2;
+      var lienzo = document.createElement('canvas');
+      lienzo.width = 380 * escala;
+      lienzo.height = Math.ceil(alto) * escala;
+      var ctx = lienzo.getContext('2d');
+      ctx.scale(escala, escala);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, 380, alto);
+      ctx.textBaseline = 'alphabetic';
+      ticket(ctx, datos, logo, false);
+
+      return new Promise(function(listo){
+        lienzo.toBlob(function(blob){
+          listo({ blob: blob, nombre: datos.ref + '.png' });
+        }, 'image/png');
+      });
+    });
+  }
+
+  function descargar(img){
+    var url = URL.createObjectURL(img.blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = img.nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  }
+
+  function porTexto(){
+    window.open('https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(mensaje()),
+                '_blank', 'noopener');
+  }
+
   btnEnviar.addEventListener('click', function(){
     if (!WHATSAPP || !estado.total) return;
 
@@ -1698,8 +1965,38 @@
       return;
     }
 
-    window.open('https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(mensaje()),
-                '_blank', 'noopener');
+    var textoBoton = btnEnviar.textContent;
+    btnEnviar.disabled = true;
+    btnEnviar.textContent = 'Armando...';
+
+    comprobante().then(function(img){
+      btnEnviar.disabled = false;
+      btnEnviar.textContent = textoBoton;
+
+      var archivo = null;
+      try {
+        archivo = new File([img.blob], img.nombre, { type: 'image/png' });
+      } catch (e) {}
+
+      // el celular abre la bandeja y el cliente escoge WhatsApp
+      if (archivo && navigator.canShare && navigator.canShare({ files: [archivo] })){
+        navigator.share({ files: [archivo], text: mensaje() })
+          .catch(function(err){
+            // si el cliente cancela no se hace nada; si fallo, va por texto
+            if (err && err.name === 'AbortError') return;
+            porTexto();
+          });
+        return;
+      }
+
+      // computador o navegador sin compartir: texto + imagen descargada
+      descargar(img);
+      porTexto();
+    }).catch(function(){
+      btnEnviar.disabled = false;
+      btnEnviar.textContent = textoBoton;
+      porTexto();   // si el dibujo falla, al menos el pedido sale
+    });
   });
 
   /* --- abrir y cerrar la hoja --- */
