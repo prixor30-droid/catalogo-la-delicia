@@ -676,6 +676,15 @@
   }
   .enviar:active{transform:translateY(1px);}
   .enviar[disabled]{opacity:.45;cursor:default;box-shadow:none;}
+  /* Falta algo: el boton se ve apagado pero sigue tocandose. Un boton muerto
+     no explica que falta; este, al tocarlo, marca los campos en rojo. */
+  .enviar.incompleto{
+    background:none;background-color:rgba(255,255,255,.07);
+    color:var(--text-dim);box-shadow:none;
+  }
+  .res-falta{
+    display:block;margin-top:2px;color:var(--gold);font-weight:600;
+  }
   /* con la hoja abierta, el catalogo de atras no debe moverse */
   body.hoja-abierta{overflow:hidden;}
   @media (max-width:360px){
@@ -1500,7 +1509,8 @@
     campos[k].addEventListener('input', function(){
       campos[k].classList.remove('falta');
       guardarDatos();
-      pintarBoton();
+      // recalcular y no solo pintarBoton: el aviso de datos vive en la barra
+      recalcular();
     });
   });
 
@@ -1618,7 +1628,9 @@
     else if (partes.length) texto = partes.join(' · ');
     else                  texto = 'Sin productos';
 
-    detalle.innerHTML = '<b>' + pesos(total) + '</b>' + texto;
+    var falta = (docenas + sueltas) > 0 && faltantes().length > 0;
+    detalle.innerHTML = '<b>' + pesos(total) + '</b>' + texto +
+      (falta ? '<span class="res-falta">Faltan tus datos de entrega</span>' : '');
     pintarBoton();
 
     try {
@@ -1633,6 +1645,7 @@
   function pintarBoton(){
     var hay = productos.some(function(p){ return p.cantidad > 0; });
     btnEnviar.disabled = !hay || !WHATSAPP;
+    btnEnviar.classList.toggle('incompleto', hay && faltantes().length > 0);
   }
 
   /* --- el mensaje que llega al WhatsApp --- */
