@@ -27,6 +27,12 @@
 <link rel="icon" type="image/png" sizes="512x512" href="favicon-512.png">
 <link rel="apple-touch-icon" href="favicon-180.png">
 
+<!-- La papa del primer sabor es lo que el cliente espera ver al entrar, asi
+     que se pide de una y con prioridad alta. Sin esto competia con las fuentes
+     y con el logo, y en celular tardaba en aparecer: quedaba el rombo de color
+     solo. El navegador que no entienda webp ignora este preload. -->
+<link rel="preload" as="image" href="bbq.webp" type="image/webp" fetchpriority="high">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -567,7 +573,8 @@
 
 <picture class="logo">
   <source srcset="ladelicialogo.webp" type="image/webp">
-  <img src="ladelicialogo.png" alt="Productos La Delicia" width="420" height="412">
+  <img src="ladelicialogo.png" alt="Productos La Delicia" width="420" height="412"
+       fetchpriority="low">
 </picture>
 
 <header>
@@ -599,7 +606,7 @@
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
             <source srcset="bbq.webp" type="image/webp">
-            <img src="bbq.png" alt="La Delicia BBQ Dulce">
+            <img src="bbq.png" alt="La Delicia BBQ Dulce" fetchpriority="high">
           </picture></div>
           <div class="meta">
             <div class="etiqueta"></div>
@@ -1134,6 +1141,43 @@
   }
   escena.addEventListener('pointerup', soltar);
   escena.addEventListener('pointercancel', soltar);
+
+  /* --- calentar las fotos que faltan ---------------------------------
+     Las demas papas van con loading="lazy" para no quitarle ancho de banda a
+     la primera. El problema es que el abanico las manda hacia atras en 3D y el
+     navegador no siempre las cuenta como visibles: en celular quedaba el rombo
+     de color sin papa hasta que el cliente deslizaba. Por eso, en cuanto la
+     pagina termina de cargar, se piden a mano: primero las vecinas del sabor
+     activo y de a dos a la vez, para no ahogar la conexion del celular. */
+  function calentarFotos(){
+    var cola = [];
+    items.forEach(function(el, i){
+      Array.prototype.forEach.call(el.querySelectorAll('img[loading="lazy"]'), function(img){
+        if (!img.complete) cola.push({ lejos: Math.abs(i - pos), img: img });
+      });
+    });
+    cola.sort(function(a, b){ return a.lejos - b.lejos; });
+
+    var enCurso = 0;
+    function tirar(){
+      while (enCurso < 2 && cola.length){
+        var img = cola.shift().img;
+        enCurso++;
+        var hecho = false;
+        var seguir = function(){
+          if (hecho) return;      // load y error no deben contar dos veces
+          hecho = true; enCurso--; tirar();
+        };
+        img.addEventListener('load', seguir);
+        img.addEventListener('error', seguir);
+        img.loading = 'eager';    // esto es lo que dispara la peticion
+        if (img.complete) seguir();   // ya estaba en cache
+      }
+    }
+    tirar();
+  }
+  if (document.readyState === 'complete') calentarFotos();
+  else window.addEventListener('load', calentarFotos);
 
   window.addEventListener('resize', function(){
     var antes = anchoModo;
