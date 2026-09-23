@@ -682,6 +682,14 @@
     background:none;background-color:rgba(255,255,255,.07);
     color:var(--text-dim);box-shadow:none;
   }
+  .secundario{
+    display:block;width:100%;margin:14px 0 4px;
+    font-family:'Poppins',sans-serif;font-weight:600;font-size:13px;
+    color:var(--text);background:transparent;border:1px solid var(--line);
+    border-radius:12px;padding:12px 16px;cursor:pointer;
+  }
+  .secundario:active{background:rgba(255,255,255,.06);}
+  .secundario[disabled]{opacity:.5;cursor:default;}
   .res-falta{
     display:block;margin-top:2px;color:var(--gold);font-weight:600;
   }
@@ -1084,6 +1092,10 @@
           <input id="d-tel" type="tel" inputmode="tel" autocomplete="tel"
                  placeholder="300 123 4567" maxlength="20">
         </label>
+
+        <button class="secundario" id="bajar-comprobante" type="button">
+          Descargar comprobante
+        </button>
       </div>
     </div>
     <div class="resumen" id="resumen">
@@ -1701,11 +1713,12 @@
   /* ---------------------------------------------------------------------
      Comprobante en imagen
 
-     WhatsApp no recibe archivos por un enlace wa.me: eso solo manda texto.
-     Lo que si funciona es compartir desde el navegador (navigator.share con
-     archivos), que abre la bandeja del celular y ahi el cliente escoge
-     WhatsApp. Donde eso no exista (computador, navegadores viejos) se cae al
-     enlace de texto de siempre y ademas se descarga la imagen.
+     El pedido no viaja como imagen sino como texto, porque un enlace wa.me
+     cae directo en el chat de La Delicia y el cliente solo da enviar. Mandar
+     la imagen obligaria a pasar por la bandeja del celular, escoger WhatsApp
+     y luego el contacto: dos toques mas y el riesgo de que el pedido termine
+     en otra conversacion. El comprobante se descarga aparte, para el que lo
+     quiera guardar.
 
      El ticket se dibuja en un canvas y no con una libreria: son cuatro clases
      de texto y dos lineas, no vale la pena bajar 200 KB, y asi sigue
@@ -1978,37 +1991,37 @@
       return;
     }
 
-    var textoBoton = btnEnviar.textContent;
-    btnEnviar.disabled = true;
-    btnEnviar.textContent = 'Armando...';
+    /* Texto y no imagen: el enlace wa.me cae directo en el chat de La Delicia
+       y el cliente solo da enviar. Compartir la imagen abriria la bandeja del
+       celular, donde toca escoger WhatsApp y despues el contacto, y ahi el
+       pedido se puede ir a otra persona por equivocacion. */
+    porTexto();
+  });
 
+  /* El comprobante queda aparte, para el que quiera guardarlo. */
+  var btnBajar = document.getElementById('bajar-comprobante');
+  btnBajar.addEventListener('click', function(){
+    if (!estado.total){
+      detalle.innerHTML = '<b>' + pesos(estado.total) + '</b>' +
+                          'Marca primero lo que vas a pedir';
+      return;
+    }
+    var faltan = faltantes();
+    if (faltan.length){
+      faltan.forEach(function(k){ campos[k].classList.add('falta'); });
+      campos[faltan[0]].scrollIntoView({ block: 'center', behavior: 'smooth' });
+      campos[faltan[0]].focus({ preventScroll: true });
+      return;
+    }
+
+    var etiqueta = btnBajar.textContent;
+    btnBajar.disabled = true;
+    btnBajar.textContent = 'Armando...';
     comprobante().then(function(img){
-      btnEnviar.disabled = false;
-      btnEnviar.textContent = textoBoton;
-
-      var archivo = null;
-      try {
-        archivo = new File([img.blob], img.nombre, { type: 'image/png' });
-      } catch (e) {}
-
-      // el celular abre la bandeja y el cliente escoge WhatsApp
-      if (archivo && navigator.canShare && navigator.canShare({ files: [archivo] })){
-        navigator.share({ files: [archivo], text: mensaje() })
-          .catch(function(err){
-            // si el cliente cancela no se hace nada; si fallo, va por texto
-            if (err && err.name === 'AbortError') return;
-            porTexto();
-          });
-        return;
-      }
-
-      // computador o navegador sin compartir: texto + imagen descargada
       descargar(img);
-      porTexto();
-    }).catch(function(){
-      btnEnviar.disabled = false;
-      btnEnviar.textContent = textoBoton;
-      porTexto();   // si el dibujo falla, al menos el pedido sale
+    }).catch(function(){}).then(function(){
+      btnBajar.disabled = false;
+      btnBajar.textContent = etiqueta;
     });
   });
 
