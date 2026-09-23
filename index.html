@@ -833,6 +833,8 @@
   var activo = -1;
   var arrastrando = false;
   var inicioX = 0, inicioPos = 0, movido = false;
+  /* velocidad del dedo al soltar, para que un tiron corto ya pase de sabor */
+  var velX = 0, ultimoX = 0, ultimoT = 0, factorArrastre = 1;
 
   /* --- geometría del abanico (valores altos = efecto más marcado) --- */
   /* SEP va alto porque la perspectiva comprime el desplazamiento lateral
@@ -1006,6 +1008,12 @@
   /* --- arrastre / deslizamiento --- */
   var punteroId = null;
 
+  /* En tactil la tarjeta corre el doble que el dedo: asi basta medio recorrido
+     para cambiar de sabor, unos 70 px en un celular en vez de 143. Con raton se
+     deja 1:1, que ahi arrastrar de mas no molesta. */
+  var TACTIL = 0.5;
+  var TIRON  = 0.35;   // px/ms desde los que un movimiento cuenta como tiron
+
   /* No se captura el puntero aquí a propósito. Capturarlo en pointerdown hace
      que el navegador dirija el click al elemento que captura, y entonces el
      toque no llega nunca a la tarjeta: en móvil y tablet la descripción no se
@@ -1015,13 +1023,18 @@
   escena.addEventListener('pointerdown', function(e){
     arrastrando = true; movido = false;
     inicioX = e.clientX; inicioPos = pos;
+    velX = 0; ultimoX = e.clientX; ultimoT = e.timeStamp;
+    factorArrastre = (e.pointerType === 'mouse') ? 1 : TACTIL;
     punteroId = e.pointerId;
     objetivoToque = e.target;      // se guarda para resolver el toque al soltar
     escena.classList.add('arrastrando');
   });
 
   escena.addEventListener('pointermove', function(e){
-    if (!arrastrando) return;
+    /* Solo el dedo que empezo el gesto. Si se cuela otro puntero (un segundo
+       dedo, o el raton pasando por encima) su posicion no tiene nada que ver
+       con el arrastre y daria un salto o un tiron falso. */
+    if (!arrastrando || e.pointerId !== punteroId) return;
     var ancho = items[0].offsetWidth || 240;
     var dx = e.clientX - inicioX;
     if (!movido && Math.abs(dx) > 6){
@@ -1030,19 +1043,36 @@
       // se sale de la escena a media pasada
       try { escena.setPointerCapture(punteroId); } catch (err) {}
     }
-    pos = Math.max(-0.4, Math.min(total - 0.6, inicioPos - dx / (ancho * SEP)));
+    var lapso = e.timeStamp - ultimoT;
+    if (lapso > 0){
+      // media con la medida anterior: quita el temblor del ultimo milisegundo
+      velX = ((e.clientX - ultimoX) / lapso + velX) / 2;
+      ultimoX = e.clientX; ultimoT = e.timeStamp;
+    }
+    pos = Math.max(-0.4, Math.min(total - 0.6,
+                                  inicioPos - dx / (ancho * SEP * factorArrastre)));
     colocar();
   });
 
-  function soltar(){
+  function soltar(e){
     if (!arrastrando) return;
+    if (e && e.pointerId !== punteroId) return;   // se levanto otro puntero
     arrastrando = false;
     escena.classList.remove('arrastrando');
     if (punteroId !== null && escena.hasPointerCapture && escena.hasPointerCapture(punteroId)){
       escena.releasePointerCapture(punteroId);
     }
     punteroId = null;
-    ir(Math.round(pos));
+    var destino = Math.round(pos);
+    /* Un tiron corto y rapido avanza un sabor aunque el dedo no haya llegado a
+       la mitad del recorrido. Si el dedo se quedo quieto antes de levantarse no
+       era un tiron, por mas velocidad que llevara antes de frenar. */
+    var frenado = !e || (e.timeStamp - ultimoT) > 120;
+    if (movido && !frenado && Math.abs(velX) > TIRON){
+      destino = velX < 0 ? Math.max(destino, Math.round(inicioPos) + 1)
+                         : Math.min(destino, Math.round(inicioPos) - 1);
+    }
+    ir(destino);
     // si el dedo no se movió, era un toque: se resuelve aquí, no en el click
     if (!movido) tocar(objetivoToque);
     objetivoToque = null;
