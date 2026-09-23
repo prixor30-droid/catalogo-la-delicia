@@ -1095,7 +1095,7 @@
                  placeholder="300 123 4567" maxlength="20">
         </label>
 
-        <div class="secundarios">
+        <div class="secundarios" id="secundarios" hidden>
           <button class="secundario" id="bajar-comprobante" type="button">Descargar</button>
           <button class="secundario" id="imprimir-comprobante" type="button">Imprimir</button>
         </div>
@@ -1484,6 +1484,17 @@
     else if (localStorage.getItem(LLAVE + '-activo') === '1') encendido = true;
   } catch (e) {}
   if (!encendido) return;
+
+  /* El comprobante no es para el tendero: es para una sola persona, y se
+     enciende con un parametro aparte (&recibo=1). Con el enlace normal de
+     pedidos ni aparecen los botones. Igual que con los pedidos, se recuerda
+     en el celular para no tener que guardar el enlace largo. */
+  var recibo = false;
+  try {
+    recibo = new URLSearchParams(location.search).get('recibo') === '1';
+    if (recibo) localStorage.setItem(LLAVE + '-recibo', '1');
+    else if (localStorage.getItem(LLAVE + '-recibo') === '1') recibo = true;
+  } catch (e) {}
 
   /* --- productos, leidos de las mismas tarjetas del catalogo --------------
      Asi los precios siguen viviendo en un solo sitio: si se cambia el de una
@@ -2098,6 +2109,8 @@
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape' && !hoja.hidden) cerrar();
   });
+
+  if (recibo) document.getElementById('secundarios').hidden = false;
 
   btnCarrito.hidden = false;
   recalcular();
