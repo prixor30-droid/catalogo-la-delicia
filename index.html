@@ -1457,6 +1457,20 @@
      las docenas: las bolsas sueltas no suman. */
   var MINIMO = 10;
 
+  /* Donde queda guardado el pedido para que aparezca en la lista de la app de
+     inventario. Esta llave es la PUBLICABLE y esta a la vista de cualquiera
+     que mire el codigo de esta pagina: asi funciona, no es un descuido. Lo
+     unico que puede hacer es insertar filas en pedidos_catalogo, que es el
+     unico permiso que tiene en la base. No puede leer esa tabla ni ninguna
+     otra, ni borrar, ni tocar inventario, ventas o caja: eso lo decide la
+     politica de RLS, no el secreto de la llave. Ver add_pedidos_catalogo.sql
+     en el proyecto de inventario.
+
+     La llave secreta vive solo en el servidor de la app y nunca pasa por
+     aqui. */
+  var BASE_URL   = 'https://duhsskisgksyozjdrusl.supabase.co';
+  var BASE_LLAVE = 'sb_publishable_ChRLE6JchVDz1lW6ExRCDA_ibizrTGU';
+
   var LLAVE = 'ladelicia-pedido';
 
   var btnCarrito = document.getElementById('carrito');
@@ -2018,6 +2032,75 @@
     document.body.appendChild(marco);
   }
 
+  /* Firma del pedido, para no meter la misma fila dos veces si el cliente
+     vuelve de WhatsApp y toca enviar otra vez sin cambiar nada. */
+  var ultimoGuardado = null;
+
+  function firma(){
+    var partes = productos
+      .filter(function(p){ return p.cantidad > 0; })
+      .map(function(p){ return p.nombre + ':' + p.cantidad; });
+    return partes.join('|') + '@' + campos.local.value.trim() +
+           '|' + campos.dir.value.trim() + '|' + campos.tel.value.trim();
+  }
+
+  /* Deja el pedido en la lista de la app. Es a la buena: si no hay senal o
+     falla, no se avisa ni se detiene nada, porque el pedido igual llega por
+     WhatsApp, que es lo que de verdad importa. */
+  function guardarPedido(){
+    if (!BASE_URL || !BASE_LLAVE) return;
+
+    var actual = firma();
+    if (actual === ultimoGuardado) return;   // mismo pedido, ya quedo guardado
+
+    var items = [];
+    var sueltas = 0;
+    productos.forEach(function(p){
+      if (!p.cantidad) return;
+      if (!p.porDocena) sueltas += p.cantidad;
+      var unitario = p.porDocena ? estado.precioDoc : p.precio;
+      items.push({
+        sabor: p.nombre,
+        cantidad: p.cantidad,
+        unidad: p.porDocena ? 'docena' : 'bolsa',
+        precio_unit: unitario,
+        subtotal: p.cantidad * unitario
+      });
+    });
+    if (!items.length) return;
+
+    var fila = {
+      local:      campos.local.value.trim(),
+      direccion:  campos.dir.value.trim(),
+      telefono:   campos.tel.value.trim(),
+      items:      items,
+      docenas:    estado.docenas,
+      sueltas:    sueltas,
+      precio_doc: estado.precioDoc,
+      total:      estado.total,
+      estado:     'pendiente',
+      nota: (estado.docenas > 0 && estado.docenas < MINIMO)
+              ? 'Menos de ' + MINIMO + ' docenas: entrega hasta en 4 dias.'
+              : null
+    };
+
+    /* keepalive para que la peticion sobreviva aunque el celular se vaya a
+       WhatsApp en el mismo momento. */
+    fetch(BASE_URL + '/rest/v1/pedidos_catalogo', {
+      method: 'POST',
+      keepalive: true,
+      headers: {
+        'apikey': BASE_LLAVE,
+        'Authorization': 'Bearer ' + BASE_LLAVE,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(fila)
+    }).then(function(r){
+      if (r.ok) ultimoGuardado = actual;
+    }).catch(function(){});
+  }
+
   function porTexto(){
     window.open('https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(mensaje()),
                 '_blank', 'noopener');
@@ -2035,6 +2118,11 @@
                           'Completa tus datos de entrega';
       return;
     }
+
+    /* Primero se guarda y despues se abre WhatsApp, y en ese orden: la
+       apertura tiene que salir en el mismo toque o el navegador del celular la
+       bloquea por ventana emergente. El guardado no espera a nadie. */
+    guardarPedido();
 
     /* Texto y no imagen: el enlace wa.me cae directo en el chat de La Delicia
        y el cliente solo da enviar. Compartir la imagen abriria la bandeja del
