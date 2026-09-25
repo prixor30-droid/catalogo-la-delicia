@@ -150,11 +150,19 @@
     background:linear-gradient(180deg,var(--gold-2),var(--gold));
     box-shadow:0 12px 34px rgba(244,177,61,.22);
   }
-  /* La banda se sale del margen de la pagina para cruzarla de lado a lado. Con
-     -22px (lo que .wrap trae de padding) nunca se pasa del ancho de la
-     ventana: en celular llega justo a los dos filos y en pantalla grande se
-     queda en los 1180px de .wrap. Con 100vw si habria barra horizontal. */
-  .cinta{margin-left:-22px;margin-right:-22px;}
+  /* La banda se sale del margen de la pagina para cruzarla de lado a lado, de
+     filo a filo de la pantalla.
+
+     50% es el centro de la caja donde vive la cinta y 50vw el centro de la
+     pantalla, asi que la resta da exactamente lo que sobra a cada lado, sea
+     cual sea el ancho. En celular eso vale -22px, lo mismo que tenia antes;
+     en computador, donde el catalogo va centrado en 1180px, crece hasta los
+     dos filos en vez de quedarse en la caja.
+
+     El 100vw incluye la barra de scroll y el 100% no, asi que la cinta se
+     pasa unos pocos pixeles: los recorta el overflow-x:clip que ya lleva la
+     pagina. Por eso este calculo es seguro y el 100vw suelto no lo era. */
+  .cinta{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);}
   .cinta__via{
     display:flex;width:max-content;
     animation:correrCinta 34s linear infinite;

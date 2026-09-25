@@ -12,7 +12,7 @@
      revisan por detrás. Si se reemplazó una foto sin cambiarle el nombre, la
      nueva entra en la siguiente apertura. */
 
-var CACHE = 'la-delicia-v7';
+var CACHE = 'la-delicia-v8';
 
 /* Lo mínimo para que el catálogo abra sin señal la primera vez. Las fotos no
    van aquí: son 1,5 MB y se irían a bajar todas de golpe en la instalación.
