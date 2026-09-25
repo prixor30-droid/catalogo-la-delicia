@@ -182,8 +182,37 @@
     --w:clamp(255px,58vw,440px);
     --alto-foto:calc(var(--w) * 3.7 / 3);
     position:relative;
+    /* obliga a que la luz de abajo se quede dentro del carrusel: con z-index
+       negativo y sin esto podria irse detras del fondo de la pagina */
+    isolation:isolate;
     opacity:0;
     animation:riseIn .9s cubic-bezier(.16,1,.3,1) .3s forwards;
+  }
+
+  /* --- la luz de atras ---
+     Un resplandor grande y suave detras de todo el carrusel, del color del
+     sabor que este en el centro. No se mueve: lo unico que hace es cambiar de
+     color al cambiar de sabor, y lo hace despacio.
+
+     Es color plano con una mascara redonda, y no un degradado de colores, por
+     una razon: un degradado no sabe pasar de un color a otro, se cambia de
+     golpe. Un color plano si se funde. */
+  .carrusel::before{
+    content:'';
+    position:absolute;
+    left:50%;top:40%;
+    width:min(155%,860px);
+    aspect-ratio:1/.62;
+    transform:translate(-50%,-50%);
+    z-index:-1;
+    pointer-events:none;
+    background-color:var(--luz,#f4b13d);
+    /* la mascara va en blanco y no en negro: hay navegadores que la miden por
+       el brillo del color, y en negro no dejaban pasar nada */
+    -webkit-mask-image:radial-gradient(closest-side,#fff 0%,rgba(255,255,255,.5) 45%,transparent 74%);
+            mask-image:radial-gradient(closest-side,#fff 0%,rgba(255,255,255,.5) 45%,transparent 74%);
+    opacity:.22;
+    transition:background-color .9s ease;
   }
   .escena{
     position:relative;
@@ -277,6 +306,27 @@
     width:100%;height:100%;
     display:flex;align-items:center;justify-content:center;
   }
+  /* --- el charco de luz ---
+     Una elipse iluminada bajo la bolsa, del color del sabor, para que no se
+     vea flotando en el vacio. Es estatica: esta siempre puesta, no se enciende
+     ni se apaga, y en las tarjetas de los lados se apaga sola porque toda la
+     tarjeta va con menos opacidad. */
+  .foto::before{
+    content:'';
+    position:absolute;
+    left:50%;bottom:1%;
+    width:74%;height:14%;
+    transform:translateX(-50%);
+    z-index:-1;
+    pointer-events:none;
+    /* blanco calido y no el color del sabor: el rombo de atras ya es de ese
+       color, y uno encima del otro no se distinguian. Asi parece luz. */
+    background-color:#ffe7c0;
+    -webkit-mask-image:radial-gradient(closest-side,#fff,transparent);
+            mask-image:radial-gradient(closest-side,#fff,transparent);
+    opacity:.4;
+  }
+
   .foto img{
     max-width:100%;max-height:100%;
     width:auto;height:auto;
@@ -1336,6 +1386,7 @@
 (function(){
   document.body.classList.remove('sinjs');
 
+  var carrusel = document.getElementById('carrusel');
   var escena = document.getElementById('escena');
   var items  = Array.prototype.slice.call(escena.querySelectorAll('.item'));
   var puntos = document.getElementById('puntos');
@@ -1419,6 +1470,9 @@
         // al salir del centro se vuelve al frente y se cierra la descripción
         if (i !== activo){ el.classList.remove('volteada'); el.classList.remove('abierto'); }
       });
+      // la luz de atras se tine del sabor que quedo en el centro
+      carrusel.style.setProperty('--luz',
+        items[activo].style.getPropertyValue('--spot-c2') || '#f4b13d');
       Array.prototype.forEach.call(puntos.children, function(p, i){
         p.setAttribute('aria-current', String(i === activo));
       });
