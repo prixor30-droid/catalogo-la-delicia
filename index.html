@@ -730,6 +730,13 @@
     margin:0 0 6px;color:var(--text);
   }
   .mayoreo__nota{margin:0 0 16px;color:var(--text-dim);font-size:13px;line-height:1.6;}
+  /* El nombre del producto, para que se vea de un golpe de que es esta tabla. */
+  .mayoreo__de{
+    display:block;margin:0 0 8px;
+    font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--gold);
+  }
+  .mayoreo__de:empty{display:none;}
   .escalas{display:grid;gap:10px;grid-template-columns:repeat(3,1fr);margin:0;}
   .escala{
     border:1px solid var(--line);border-radius:14px;padding:13px 8px;
@@ -742,6 +749,13 @@
   }
   /* La ultima escala es la que conviene empujar, asi que se marca en dorado. */
   .escala--mejor{border-color:var(--gold-dim);background:rgba(244,177,61,.07);}
+  /* La tabla cambia con el paquete del centro y no siempre trae tres pasos:
+     los que se venden por unidad tienen dos, y el Fosforito x10 uno solo. */
+  .escalas--dos{grid-template-columns:repeat(2,1fr);}
+  .escalas--una{
+    grid-template-columns:1fr;
+    max-width:300px;margin-left:auto;margin-right:auto;
+  }
   /* Bajo 430px tres columnas dejan los numeros apretados: pasan a renglones. */
   @media (max-width:430px){
     .escalas{grid-template-columns:1fr;gap:8px;}
@@ -1333,6 +1347,8 @@
 
 <section class="mayoreo" aria-labelledby="titulo-mayoreo">
   <h2 id="titulo-mayoreo">Precio por cantidad</h2>
+  <!-- lo llena el JS con el nombre del paquete que este en el centro -->
+  <span class="mayoreo__de" id="mayoreo-de"></span>
   <p class="mayoreo__nota">Aplica a los sabores marcados <b>docena</b>. Entre más docenas lleve, menos paga por cada una.
     Las que se venden por unidad tienen su propia escala, anotada en cada tarjeta, y en cuanto el pedido
     pasa de <b>10 docenas</b> bajan solas a ese precio, lleve las que lleve.</p>
@@ -1564,7 +1580,72 @@
         p.setAttribute('aria-current', String(i === activo));
       });
       llenarFicha();
+      pintarEscala();
     }
+  }
+
+  /* --- la tabla de "Precio por cantidad" sigue al paquete del centro ------
+     Antes era una sola tabla, la de las docenas, y el que estaba mirando el
+     Fosforito no encontraba su escala por ninguna parte: la suya solo salia
+     en letra chica en la tarjeta. Ahora cada producto ensena la suya entera,
+     con los mismos numeros de la tarjeta. Aqui no hay una segunda lista de
+     precios que mantener. */
+  var escalasEl = document.querySelector('.escalas');
+  var notaEl    = document.querySelector('.mayoreo__nota');
+  var deEl      = document.getElementById('mayoreo-de');
+
+  /* La tabla de las docenas es la que viene escrita en el HTML, y es la misma
+     que ve quien no tenga JS. Se guarda tal cual para poder volver a ella. */
+  var escalasDocenas = escalasEl ? escalasEl.innerHTML : '';
+  var notaDocenas    = notaEl ? notaEl.innerHTML : '';
+
+  function enPesos(n){ return '$' + n.toLocaleString('es-CO'); }
+
+  function caja(paso, precio, mejor){
+    return '<div class="escala' + (mejor ? ' escala--mejor' : '') + '">' +
+             '<dt>' + paso + '</dt><dd>' + precio + '</dd>' +
+           '</div>';
+  }
+
+  function pintarEscala(){
+    if (!escalasEl || !notaEl) return;
+    var el = items[activo];
+    if (!el) return;
+
+    var unidadEl = el.querySelector('.precio .unidad');
+    var unidad   = unidadEl ? unidadEl.textContent.trim() : '';
+
+    // los once que van por docena comparten tabla: la del HTML
+    if (/docena/i.test(unidad)){
+      escalasEl.className = 'escalas';
+      escalasEl.innerHTML = escalasDocenas;
+      notaEl.innerHTML    = notaDocenas;
+      deEl.textContent    = 'Sabores por docena';
+      return;
+    }
+
+    var nombre  = el.querySelector('.nombre').textContent.trim();
+    var base    = parseInt(el.querySelector('.precio').textContent.replace(/[^0-9]/g, ''), 10) || 0;
+    var mayorEl = el.querySelector('.precio-mayor');
+    deEl.textContent = nombre;
+
+    // sin escala propia no hay pasos que mostrar, pero hay que decirlo
+    if (!mayorEl){
+      escalasEl.className = 'escalas escalas--una';
+      escalasEl.innerHTML = caja('Cualquier cantidad', enPesos(base), true);
+      notaEl.innerHTML    = 'Va al mismo precio, lleve los que lleve.';
+      return;
+    }
+
+    var desde = parseInt(mayorEl.getAttribute('data-desde'), 10)  || 0;
+    var mayor = parseInt(mayorEl.getAttribute('data-precio'), 10) || 0;
+    escalasEl.className = 'escalas escalas--dos';
+    escalasEl.innerHTML =
+      caja('1 a ' + (desde - 1) + ' unidades', enPesos(base)) +
+      caja(desde + ' unidades o más', enPesos(mayor), true);
+    notaEl.innerHTML =
+      'Se vende por unidad. Aquí cuenta solo lo que lleve de este, no el pedido entero. ' +
+      'También baja a <b>' + enPesos(mayor) + '</b> si el pedido ya trae las docenas con descuento.';
   }
 
   /* La ficha copia lo que ya está escrito en la tarjeta activa: los datos
