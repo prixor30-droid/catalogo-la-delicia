@@ -445,6 +445,17 @@
     font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
     opacity:.6;
   }
+  /* --- descuento de las que se venden por unidad ---
+     Estas no entran en la escala de docenas del bloque de abajo: cada una
+     tiene la suya, y por eso va anotada en su propia tarjeta. El texto lo
+     escribe el JS con los data- de la tarjeta, asi el numero vive en un solo
+     sitio y no hay dos que puedan quedar distintos. */
+  .precio-mayor{
+    margin:7px 0 0;
+    font-size:11px;font-weight:600;letter-spacing:.03em;
+    color:var(--gold);
+  }
+  .precio-mayor:empty{display:none;}
   .girar{
     margin-top:12px;
     font-family:'Poppins',sans-serif;
@@ -510,6 +521,14 @@
     font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
     opacity:.6;
   }
+  /* mismo recado del descuento, para las pantallas anchas donde el precio de
+     la tarjeta esta escondido y todo se lee en la ficha */
+  .ficha__mayor{
+    margin-top:10px;
+    font-size:12.5px;font-weight:600;letter-spacing:.03em;
+    color:var(--gold);
+  }
+  .ficha__mayor:empty{display:none;}
   /* Cada parte entra por separado y escalonada: leerlo de arriba abajo se
      siente más deliberado que ver el bloque entero aparecer de golpe. */
   /* Entradas con rebote: llegan de más lejos, se pasan de largo y vuelven.
@@ -536,11 +555,13 @@
   }
   .ficha.entrando .ficha__desc  {animation-delay:.17s;}
   .ficha.entrando .ficha__precio{animation-delay:.27s;}
+  .ficha.entrando .ficha__mayor {animation-delay:.34s;}
 
   @media (min-width:900px){
     .ficha{display:block;}
     /* los datos pasan a la ficha; bajo la foto solo queda el botón de reverso */
-    .meta .etiqueta,.meta .desc,.meta .nombre,.meta .precio{display:none;}
+    .meta .etiqueta,.meta .desc,.meta .nombre,.meta .precio,
+    .meta .precio-mayor{display:none;}
     .meta{margin-top:8px;}
   }
 
@@ -1027,6 +1048,7 @@
       <h2 class="ficha__nombre"></h2>
       <p class="ficha__desc"></p>
       <div class="ficha__precio"></div>
+      <div class="ficha__mayor"></div>
     </div>
 
     <div class="escena" id="escena">
@@ -1227,7 +1249,8 @@
             <div class="etiqueta">140 g</div>
             <h2 class="nombre">Fosforito</h2>
             <p class="desc">Papa en bastón, crocante y pensada para compartir.</p>
-            <div class="precio">$5.000 <span class="unidad">c/u</span></div>
+            <div class="precio">$4.000 <span class="unidad">c/u</span></div>
+            <p class="precio-mayor" data-desde="11" data-precio="3700"></p>
           </div>
         </div>
       </article>
@@ -1243,7 +1266,7 @@
             <div class="etiqueta">10 bolsas de 70 g</div>
             <h2 class="nombre">Fosforito x10</h2>
             <p class="desc">Diez bolsas de papa en bastón en un solo paquete.</p>
-            <div class="precio">$15.000 <span class="unidad">el paquete</span></div>
+            <div class="precio">$14.500 <span class="unidad">el paquete</span></div>
           </div>
         </div>
       </article>
@@ -1260,6 +1283,7 @@
             <h2 class="nombre">Mega</h2>
             <p class="desc">Porción individual. Rinde para el antojo.</p>
             <div class="precio">$1.800 <span class="unidad">c/u</span></div>
+            <p class="precio-mayor" data-desde="11" data-precio="1700"></p>
           </div>
         </div>
       </article>
@@ -1275,7 +1299,8 @@
             <div class="etiqueta">Familiar</div>
             <h2 class="nombre">Megatón Familiar</h2>
             <p class="desc">Bolsa familiar, pensada para compartir.</p>
-            <div class="precio">$6.000 <span class="unidad">c/u</span></div>
+            <div class="precio">$5.000 <span class="unidad">c/u</span></div>
+            <p class="precio-mayor" data-desde="11" data-precio="4500"></p>
           </div>
         </div>
       </article>
@@ -1299,7 +1324,8 @@
 
 <section class="mayoreo" aria-labelledby="titulo-mayoreo">
   <h2 id="titulo-mayoreo">Precio por cantidad</h2>
-  <p class="mayoreo__nota">Aplica a los sabores marcados <b>docena</b>. Entre más docenas lleve, menos paga por cada una.</p>
+  <p class="mayoreo__nota">Aplica a los sabores marcados <b>docena</b>. Entre más docenas lleve, menos paga por cada una.
+    Las que se venden por unidad tienen su propia escala, anotada en cada tarjeta.</p>
   <dl class="escalas">
     <div class="escala">
       <dt>1 a 10 docenas</dt>
@@ -1416,6 +1442,23 @@
 </div>
 
 <script>
+/* --- el recado del descuento por cantidad ------------------------------
+   Cada tarjeta que tiene escala propia trae el numero en sus data-, y aqui se
+   convierte en texto. Se hace de primero porque la ficha de pantalla ancha
+   copia este renglon ya escrito. La unidad se lee del precio de al lado para
+   que diga "c/u" o "el paquete" segun corresponda. */
+(function(){
+  Array.prototype.forEach.call(document.querySelectorAll('.precio-mayor'), function(el){
+    var desde  = parseInt(el.getAttribute('data-desde'), 10)  || 0;
+    var precio = parseInt(el.getAttribute('data-precio'), 10) || 0;
+    if (!desde || !precio) return;
+    var unidadEl = el.parentNode.querySelector('.precio .unidad');
+    var unidad = unidadEl ? unidadEl.textContent.trim() : 'c/u';
+    el.innerHTML = 'Desde ' + desde + ': <b>$' + precio.toLocaleString('es-CO') +
+                   '</b> ' + unidad;
+  });
+})();
+
 (function(){
   document.body.classList.remove('sinjs');
 
@@ -1525,6 +1568,7 @@
       ficha.querySelector('.ficha__nombre').textContent   = (el.querySelector('.nombre')  || {}).textContent || '';
       ficha.querySelector('.ficha__desc').textContent     = (el.querySelector('.desc')    || {}).textContent || '';
       ficha.querySelector('.ficha__precio').innerHTML     = tomar('.precio');
+      ficha.querySelector('.ficha__mayor').innerHTML      = tomar('.precio-mayor');
       ficha.classList.remove('cambiando');
       if (!quieto.matches){
         ficha.classList.remove('entrando');
@@ -1842,10 +1886,17 @@
     if (!precioEl) return;
     var unidadEl = el.querySelector('.precio .unidad');
     var fuente   = el.querySelector('picture source');
+    /* La escala propia de las que van por unidad, del mismo data- con que se
+       escribio el recado de la tarjeta. Si la tarjeta no lo trae, no hay
+       descuento y el precio es uno solo. */
+    var mayorEl = el.querySelector('.precio-mayor');
     productos.push({
       nombre: el.querySelector('.nombre').textContent.trim(),
       precio: parseInt(precioEl.textContent.replace(/[^0-9]/g, ''), 10) || 0,
+      unidad: unidadEl ? unidadEl.textContent.trim() : 'c/u',
       porDocena: !!(unidadEl && /docena/i.test(unidadEl.textContent)),
+      mayor:      mayorEl ? parseInt(mayorEl.getAttribute('data-precio'), 10) || 0 : 0,
+      mayorDesde: mayorEl ? parseInt(mayorEl.getAttribute('data-desde'),  10) || 0 : 0,
       foto: fuente ? fuente.getAttribute('srcset') : '',
       cantidad: 0
     });
@@ -1903,6 +1954,16 @@
     return ESCALA[ESCALA.length - 1].precio;
   }
 
+  /* Lo que cuesta una unidad de este producto con el pedido como esta ahora.
+     Las docenas se miran sumando todo el pedido; las que van por unidad, cada
+     una por su cuenta, porque su descuento es por la cantidad de ese mismo
+     producto y no del pedido entero. */
+  function precioDe(p, precioDoc){
+    if (p.porDocena) return precioDoc;
+    if (p.mayorDesde && p.cantidad >= p.mayorDesde) return p.mayor;
+    return p.precio;
+  }
+
   /* --- filas --- */
   productos.forEach(function(p){
     var fila = document.createElement('div');
@@ -1911,7 +1972,7 @@
       '<img src="' + p.foto + '" alt="" loading="lazy">' +
       '<div class="fp-datos">' +
         '<div class="fp-nombre">' + p.nombre +
-          '<span>' + (p.porDocena ? 'por docena' : pesos(p.precio) + ' c/u') + '</span></div>' +
+          '<span>' + (p.porDocena ? 'por docena' : pesos(p.precio) + ' ' + p.unidad) + '</span></div>' +
         '<div class="fp-abajo">' +
           '<div class="paso">' +
             '<button type="button" class="menos" aria-label="Quitar uno de ' + p.nombre + '">&minus;</button>' +
@@ -1958,12 +2019,14 @@
     var total = 0;
 
     productos.forEach(function(p){
-      var sub = p.cantidad * (p.porDocena ? pd : p.precio);
+      var unitario = precioDe(p, pd);
+      var sub = p.cantidad * unitario;
       total += sub;
       p.sub.textContent = pesos(sub);
       p.fila.classList.toggle('tiene', p.cantidad > 0);
       // el precio de cada sabor se mueve solo al cruzar un escalon
       if (p.porDocena) p.marca.textContent = docenas > 0 ? pesos(pd) + ' docena' : 'por docena';
+      else if (p.mayorDesde) p.marca.textContent = pesos(unitario) + ' ' + p.unidad;
     });
 
     estado = { total: total, docenas: docenas, precioDoc: pd };
@@ -2029,8 +2092,9 @@
     }
     productos.forEach(function(p){
       if (!p.cantidad || p.porDocena) return;
-      l.push(p.nombre + ': ' + p.cantidad + ' x ' + pesos(p.precio) +
-             ' = ' + pesos(p.cantidad * p.precio));
+      var unitario = precioDe(p, estado.precioDoc);
+      l.push(p.nombre + ': ' + p.cantidad + ' x ' + pesos(unitario) +
+             ' = ' + pesos(p.cantidad * unitario));
     });
     /* Una linea con la cuenta hecha, para no contar renglon por renglon ni de
        este lado ni del tuyo al despachar. */
@@ -2087,7 +2151,7 @@
     productos.forEach(function(p){
       if (!p.cantidad) return;
       if (!p.porDocena) sueltas += p.cantidad;
-      var unitario = p.porDocena ? estado.precioDoc : p.precio;
+      var unitario = precioDe(p, estado.precioDoc);
       items.push({
         sabor: p.nombre,
         cantidad: p.cantidad,
