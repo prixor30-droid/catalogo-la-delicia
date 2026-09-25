@@ -456,6 +456,15 @@
     color:var(--gold);
   }
   .precio-mayor:empty{display:none;}
+  /* El segundo renglon va mas apagado: es la letra chica de la misma regla.
+     La ficha de pantalla ancha copia este mismo HTML, asi que la regla tiene
+     que nombrar las dos: si no, alla el renglon se pega al de arriba. */
+  .precio-mayor span,
+  .ficha__mayor span{
+    display:block;margin-top:1px;
+    font-size:10px;font-weight:600;letter-spacing:.02em;
+    color:var(--text-dim);text-transform:none;
+  }
   .girar{
     margin-top:12px;
     font-family:'Poppins',sans-serif;
@@ -1325,7 +1334,8 @@
 <section class="mayoreo" aria-labelledby="titulo-mayoreo">
   <h2 id="titulo-mayoreo">Precio por cantidad</h2>
   <p class="mayoreo__nota">Aplica a los sabores marcados <b>docena</b>. Entre más docenas lleve, menos paga por cada una.
-    Las que se venden por unidad tienen su propia escala, anotada en cada tarjeta.</p>
+    Las que se venden por unidad tienen su propia escala, anotada en cada tarjeta, y en cuanto el pedido
+    pasa de <b>10 docenas</b> bajan solas a ese precio, lleve las que lleve.</p>
   <dl class="escalas">
     <div class="escala">
       <dt>1 a 10 docenas</dt>
@@ -1455,7 +1465,8 @@
     var unidadEl = el.parentNode.querySelector('.precio .unidad');
     var unidad = unidadEl ? unidadEl.textContent.trim() : 'c/u';
     el.innerHTML = 'Desde ' + desde + ': <b>$' + precio.toLocaleString('es-CO') +
-                   '</b> ' + unidad;
+                   '</b> ' + unidad +
+                   '<span>o con las docenas en descuento</span>';
   });
 })();
 
@@ -1954,13 +1965,25 @@
     return ESCALA[ESCALA.length - 1].precio;
   }
 
+  /* El precio de docena sin descuento, o sea el escalon de arriba de la
+     tabla. Sale de ESCALA para no dejar el numero escrito dos veces. */
+  var DOCENA_LLENA = ESCALA[ESCALA.length - 1].precio;
+
   /* Lo que cuesta una unidad de este producto con el pedido como esta ahora.
-     Las docenas se miran sumando todo el pedido; las que van por unidad, cada
-     una por su cuenta, porque su descuento es por la cantidad de ese mismo
-     producto y no del pedido entero. */
+
+     Las que van por unidad tienen dos maneras de llegar a su precio de
+     descuento, y basta con una:
+
+       1. llevar 11 o mas de ese mismo producto, o
+       2. que el pedido ya traiga las docenas con descuento.
+
+     La segunda es la que pidio el dueno: quien ya esta comprando al por mayor
+     no tiene por que pagar el precio de tienda por dos Megatones sueltos. */
   function precioDe(p, precioDoc){
     if (p.porDocena) return precioDoc;
-    if (p.mayorDesde && p.cantidad >= p.mayorDesde) return p.mayor;
+    if (!p.mayorDesde) return p.precio;                 // sin escala propia
+    if (p.cantidad >= p.mayorDesde) return p.mayor;     // por cantidad propia
+    if (precioDoc < DOCENA_LLENA) return p.mayor;       // arrastrado por las docenas
     return p.precio;
   }
 
