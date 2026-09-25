@@ -507,7 +507,8 @@
   /* Van en una fila que se parte sola cuando no caben, porque el de instalar
      aparece y desaparece segun el navegador. */
   .pie-acciones{
-    display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:18px;
+    display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
+    margin-top:18px;padding:0 18px;
   }
   .pie-boton{
     border:1px solid var(--gold-dim);border-radius:999px;
@@ -1180,7 +1181,7 @@
   <div>Los precios marcados <b>docena</b> corresponden a 12 unidades; los marcados <b>c/u</b> son por bolsa.</div>
   <div>Precios sujetos a cambio sin previo aviso.</div>
   <div class="pie-acciones">
-    <button class="pie-boton" id="instalar" type="button" hidden>Guardar en mi celular</button>
+    <button class="pie-boton" id="instalar" type="button" hidden>Guardar en la pantalla de mi celular</button>
     <button class="pie-boton" id="ver-qr" type="button">Código QR</button>
   </div>
   <div class="instalar__ayuda" id="instalar-ayuda" hidden>
