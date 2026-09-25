@@ -222,6 +222,25 @@
     opacity:.22;
     transition:background-color .9s ease;
   }
+
+  /* --- en computador, todo mas grande ---
+     El paquete se quedaba topado en 440px. En un celular eso es mas de la
+     mitad de la pantalla, pero en un monitor de 1900 es la cuarta parte y el
+     producto se veia chiquito y perdido en medio de tanto negro. De 1200px
+     para arriba se le sube el tope, y la luz de atras crece con el para que
+     no se quede corta detras de una bolsa mas grande.
+
+     El minimo del clamp es el tope viejo: asi el paquete nunca sale mas chico
+     que antes, solo mas grande. El celular no se toca.
+
+     El 62vh es un freno para las ventanas anchas pero bajitas: sin el, un
+     monitor ancho y una ventana a media altura dejaban el paquete tan alto
+     que las flechas y los puntos se iban debajo del filo. Cuando sobra
+     altura no hace nada, manda el 33vw. */
+  @media (min-width:1200px){
+    .carrusel{--w:clamp(440px,min(33vw,62vh),600px);}
+    .carrusel::before{width:min(215%,1650px);}
+  }
   .escena{
     position:relative;
     height:calc(var(--alto-foto) + 170px);
