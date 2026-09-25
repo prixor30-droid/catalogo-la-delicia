@@ -2253,6 +2253,16 @@
       l.push('');
       l.push('(Menos de ' + MINIMO + ' docenas: la entrega puede tardar hasta 4 dias.)');
     }
+
+    /* Va de ultimo, que es donde queda la vista. El catalogo no sabe que hay
+       en la fabrica, asi que un pedido de aqui es una intencion de compra y no
+       una venta cerrada: si el cliente paga antes de que le confirmen, y algo
+       estaba agotado, la plata ya entro por algo que no se puede despachar.
+       Eso paso de verdad. Esta linea lo dice antes de que pase. */
+    l.push('');
+    l.push('(Pedido sujeto a confirmacion: La Delicia confirma que hay todo ' +
+           'disponible antes de recibir el pago.)');
+
     return l.join('\n');
   }
 
