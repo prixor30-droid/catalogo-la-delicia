@@ -750,6 +750,34 @@
     border:2px solid #000;
   }
 
+  /* --- el aviso de pedido enviado ---
+     Va por encima de la hoja del pedido, porque cuando el tendero vuelve de
+     WhatsApp la hoja suele seguir abierta. Se llama .enviado y no .aviso
+     porque .aviso ya es el recado de "menos de 10 docenas". */
+  .enviado{
+    position:fixed;z-index:75;
+    left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));
+    max-width:440px;margin:0 auto;
+    display:flex;align-items:center;gap:12px;
+    background:#141210;border:1px solid var(--gold-dim);border-radius:14px;
+    padding:12px 14px;
+    box-shadow:0 14px 34px rgba(0,0,0,.6);
+    animation:subirAviso .25s ease-out;
+  }
+  /* sin esto el display:flex de arriba le gana al atributo hidden */
+  .enviado[hidden]{display:none;}
+  @keyframes subirAviso{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .enviado__texto{flex:1 1 auto;font-size:13px;line-height:1.5;color:var(--text);}
+  .enviado__btn{
+    flex:0 0 auto;
+    font:inherit;font-size:12.5px;font-weight:700;
+    letter-spacing:.03em;text-transform:uppercase;
+    color:var(--gold);background:transparent;
+    border:1px solid var(--gold-dim);border-radius:999px;
+    padding:9px 14px;cursor:pointer;
+  }
+  .enviado__btn:active{background:rgba(244,177,61,.1);}
+
   /* --- la hoja --- */
   .hoja{position:fixed;inset:0;z-index:60;}
   .hoja__fondo{position:absolute;inset:0;background:rgba(0,0,0,.72);}
@@ -1359,6 +1387,11 @@
     Para dejarlo como aplicacion: toca <b>Compartir</b> y luego <b>Agregar a inicio</b>.
   </div>
 </footer>
+
+<div class="enviado" id="aviso-enviado" role="status" hidden>
+  <span class="enviado__texto">Pedido enviado. Ya puedes armar otro.</span>
+  <button class="enviado__btn" id="recuperar-pedido" type="button">Recuperar</button>
+</div>
 
 <!-- La imagen del QR viene hecha en vez de dibujarse con codigo: la direccion
      del catalogo no cambia nunca, asi que sobra cargar una libreria para
@@ -2130,6 +2163,11 @@
        sale de la app de inventario, en la vista Pedidos, que es donde llega
        este mismo pedido. */
     porTexto();
+
+    /* Queda anotado que este pedido ya salio. No se vacia aqui mismo: si
+       WhatsApp no abre, o el tendero se devuelve sin mandar el mensaje, se
+       quedaria sin nada. Se vacia cuando vuelve al catalogo. */
+    try { localStorage.setItem(LLAVE + '-enviado', String(Date.now())); } catch (e) {}
   });
 
   /* --- abrir y cerrar la hoja --- */
@@ -2154,8 +2192,82 @@
     if (e.key === 'Escape' && !hoja.hidden) cerrar();
   });
 
+  /* --- vaciar el pedido que ya salio -----------------------------------
+     El catalogo NO puede saber si el mensaje se mando de verdad: wa.me abre
+     WhatsApp con el texto puesto, pero el enviar lo da el tendero alla y de
+     eso no vuelve ninguna senal. Lo que si se sabe es que abrio WhatsApp y
+     que despues volvio aqui, y eso es lo que se usa.
+
+     Por eso no se borra y ya: se guarda una copia y se ofrece recuperarla,
+     que es la red para cuando WhatsApp no abrio o se arrepintio a medio
+     camino. Los datos de entrega no se tocan: esos son suyos y sirven para
+     el siguiente pedido. */
+  /* avisoEnviado y no aviso: `aviso` ya es el recado de "menos de 10
+     docenas", y las dos viven en esta misma funcion. */
+  var avisoEnviado = document.getElementById('aviso-enviado');
+  var btnRecuperar = document.getElementById('recuperar-pedido');
+  var escondeAviso = null;
+
+  function vaciarEnviado(){
+    var copia = {};
+    productos.forEach(function(p){
+      if (p.cantidad > 0) copia[p.nombre] = p.cantidad;
+      p.cantidad = 0;
+      if (p.campo) p.campo.value = 0;
+    });
+    if (!Object.keys(copia).length) return false;   // no habia nada que vaciar
+
+    try {
+      localStorage.setItem(LLAVE + '-copia', JSON.stringify(copia));
+    } catch (e) {}
+    recalcular();
+    return true;
+  }
+
+  function mostrarAviso(){
+    if (!avisoEnviado) return;
+    avisoEnviado.hidden = false;
+    clearTimeout(escondeAviso);
+    escondeAviso = setTimeout(function(){ avisoEnviado.hidden = true; }, 14000);
+  }
+
+  function cerrarPedidoEnviado(){
+    try { localStorage.removeItem(LLAVE + '-enviado'); } catch (e) {}
+    if (vaciarEnviado()) mostrarAviso();
+  }
+
+  if (btnRecuperar){
+    btnRecuperar.addEventListener('click', function(){
+      var copia = {};
+      try { copia = JSON.parse(localStorage.getItem(LLAVE + '-copia') || '{}'); } catch (e) {}
+      productos.forEach(function(p){
+        var n = parseInt(copia[p.nombre], 10);
+        p.cantidad = n > 0 ? Math.min(n, 999) : 0;
+        if (p.campo) p.campo.value = p.cantidad;
+      });
+      recalcular();
+      avisoEnviado.hidden = true;
+      clearTimeout(escondeAviso);
+    });
+  }
+
+  /* Al volver de WhatsApp. Los tres segundos son para no dispararlo con un
+     parpadeo de la pantalla justo despues del toque. */
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState !== 'visible') return;
+    var cuando = 0;
+    try { cuando = parseInt(localStorage.getItem(LLAVE + '-enviado'), 10) || 0; } catch (e) {}
+    if (cuando && Date.now() - cuando > 3000) cerrarPedidoEnviado();
+  });
+
   btnCarrito.hidden = false;
   recalcular();
+
+  /* Si cerro el navegador alla y volvio mucho despues, la marca sigue puesta
+     y se limpia al abrir. */
+  var marcaVieja = null;
+  try { marcaVieja = localStorage.getItem(LLAVE + '-enviado'); } catch (e) {}
+  if (marcaVieja) cerrarPedidoEnviado();
 })();
 
 /* --- guardar el catalogo en el celular --------------------------------
