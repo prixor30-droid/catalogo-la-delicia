@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>La Delicia · Catálogo</title>
-<meta name="description" content="Catálogo de sabores de La Delicia — papas fritas artesanales. 14 presentaciones con precios al día.">
+<meta name="description" content="Catálogo de sabores de La Delicia — papas fritas artesanales. 15 presentaciones con precios al día.">
 <link rel="canonical" href="https://prixor30-droid.github.io/catalogo-la-delicia/">
 <meta name="theme-color" content="#000000">
 
@@ -14,7 +14,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="La Delicia">
 <meta property="og:title" content="La Delicia · Catálogo de sabores">
-<meta property="og:description" content="Papas fritas artesanales. 14 presentaciones con precios al día.">
+<meta property="og:description" content="Papas fritas artesanales. 15 presentaciones con precios al día.">
 <meta property="og:url" content="https://prixor30-droid.github.io/catalogo-la-delicia/">
 <meta property="og:image" content="https://prixor30-droid.github.io/catalogo-la-delicia/og-catalogo.jpg">
 <meta property="og:image:width" content="1200">
@@ -26,6 +26,16 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="512x512" href="favicon-512.png">
 <link rel="apple-touch-icon" href="favicon-180.png">
+
+<!-- Con el manifiesto el celular ofrece guardar el catalogo como aplicacion:
+     queda un icono en la pantalla de inicio y abre a pantalla completa, sin la
+     barra de direcciones. Sigue siendo la misma pagina, no hay nada que bajar
+     de una tienda. -->
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="La Delicia">
 
 <!-- La papa del primer sabor es lo que el cliente espera ver al entrar, asi
      que se pide de una y con prioridad alta. Sin esto competia con las fuentes
@@ -492,6 +502,21 @@
     font-size:11px;letter-spacing:.1em;text-transform:uppercase;
     color:#6d6558;
   }
+
+  /* ---------- instalar ---------- */
+  /* Solo se ve cuando el navegador avisa que ya se puede instalar. */
+  .instalar{
+    display:block;margin:16px auto 0;
+    border:1px solid var(--gold-dim);border-radius:999px;
+    background:transparent;color:var(--gold);
+    padding:11px 24px;
+    font:inherit;font-size:13px;font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;
+    cursor:pointer;
+    transition:background .25s;
+  }
+  .instalar:hover{background:rgba(244,177,61,.1);}
+  .instalar__ayuda{margin-top:12px;font-size:12px;line-height:1.7;}
 
   /* ---------- footer ---------- */
   /* --- precio por cantidad ---------------------------------------------
@@ -1137,6 +1162,10 @@
   <div><b>La Delicia</b> — Papas fritas artesanales</div>
   <div>Los precios marcados <b>docena</b> corresponden a 12 unidades; los marcados <b>c/u</b> son por bolsa.</div>
   <div>Precios sujetos a cambio sin previo aviso.</div>
+  <button class="instalar" id="instalar" type="button" hidden>Guardar en mi celular</button>
+  <div class="instalar__ayuda" id="instalar-ayuda" hidden>
+    Para dejarlo como aplicacion: toca <b>Compartir</b> y luego <b>Agregar a inicio</b>.
+  </div>
 </footer>
 
 <script>
@@ -1184,10 +1213,23 @@
 
   function colocar(){
     var ancho = items[0].offsetWidth || 240;
-    var centro = Math.round(pos);
+    var centro = indiceDe(pos);
 
     items.forEach(function(el, i){
+      /* El abanico es un circulo: cada tarjeta se dibuja en la vuelta que la
+         deja mas cerca del centro. Por eso despues del ultimo sabor sigue el
+         primero, en los dos sentidos, y no hay principio ni final. */
       var off = i - pos;
+      off -= total * Math.round(off / total);
+
+      /* Al dar la vuelta, la tarjeta salta de un extremo al otro. Eso ocurre
+         siempre fuera de la vista, pero con la transicion puesta se veria
+         cruzar la pantalla al tocar un punto lejano: se le quita por un cuadro
+         y reaparece ya en su sitio. */
+      var salto = el._off !== undefined && Math.abs(off - el._off) > total / 2;
+      el._off = off;
+      if (salto) el.style.transition = 'none';
+
       var abs = Math.abs(off);
       var fuera = abs > VISIBLES + 0.5 || (anchoModo && off < -0.5);
 
@@ -1202,6 +1244,8 @@
       el.style.zIndex = String(100 - Math.round(abs * 10));
       el.style.pointerEvents = fuera ? 'none' : 'auto';
       el.setAttribute('aria-hidden', fuera ? 'true' : 'false');
+
+      if (salto){ void el.offsetWidth; el.style.transition = ''; }
     });
 
     if (centro !== activo){
@@ -1214,8 +1258,6 @@
       Array.prototype.forEach.call(puntos.children, function(p, i){
         p.setAttribute('aria-current', String(i === activo));
       });
-      btnPrev.disabled = activo <= 0;
-      btnNext.disabled = activo >= total - 1;
       llenarFicha();
     }
   }
@@ -1246,9 +1288,27 @@
     llenarFicha._t = setTimeout(pintar, 140);
   }
 
-  function ir(i){
-    pos = Math.max(0, Math.min(total - 1, i));
+  /* pos es una posicion continua y sin topes; indiceDe la dobla al circulo
+     para saber que sabor esta en el centro. */
+  function indiceDe(p){
+    return ((Math.round(p) % total) + total) % total;
+  }
+
+  function asentar(p){
+    pos = p;
     colocar();
+  }
+
+  function mover(pasos){
+    asentar(Math.round(pos) + pasos);
+  }
+
+  /* Va al sabor i por el camino mas corto, que bien puede ser dando la vuelta:
+     del ultimo al primero es un paso, no catorce de regreso. */
+  function ir(i){
+    var d = ((i - indiceDe(pos)) % total + total) % total;
+    if (d > total / 2) d -= total;
+    mover(d);
   }
 
   /* Ángulo de reposo de la ráfaga, uno por sabor. 37° no es divisor de los 30°
@@ -1269,12 +1329,12 @@
     puntos.appendChild(b);
   });
 
-  btnPrev.addEventListener('click', function(){ ir(activo - 1); });
-  btnNext.addEventListener('click', function(){ ir(activo + 1); });
+  btnPrev.addEventListener('click', function(){ mover(-1); });
+  btnNext.addEventListener('click', function(){ mover(1); });
 
   window.addEventListener('keydown', function(e){
-    if (e.key === 'ArrowLeft'){ ir(activo - 1); }
-    if (e.key === 'ArrowRight'){ ir(activo + 1); }
+    if (e.key === 'ArrowLeft'){ mover(-1); }
+    if (e.key === 'ArrowRight'){ mover(1); }
   });
 
   /* --- toque sobre una tarjeta: centrarla, girarla o abrir su descripción ---
@@ -1372,8 +1432,9 @@
       velX = ((e.clientX - ultimoX) / lapso + velX) / 2;
       ultimoX = e.clientX; ultimoT = e.timeStamp;
     }
-    pos = Math.max(-0.4, Math.min(total - 0.6,
-                                  inicioPos - dx / (ancho * SEP * factorArrastre)));
+    /* Sin topes: antes se frenaba en el primero y en el ultimo, ahora el dedo
+       puede seguir de largo y la lista vuelve a empezar. */
+    pos = inicioPos - dx / (ancho * SEP * factorArrastre);
     colocar();
   });
 
@@ -1395,7 +1456,7 @@
       destino = velX < 0 ? Math.max(destino, Math.round(inicioPos) + 1)
                          : Math.min(destino, Math.round(inicioPos) - 1);
     }
-    ir(destino);
+    asentar(destino);
     // si el dedo no se movió, era un toque: se resuelve aquí, no en el click
     if (!movido) tocar(objetivoToque);
     objetivoToque = null;
@@ -1415,8 +1476,12 @@
   function calentarFotos(){
     var cola = [];
     items.forEach(function(el, i){
+      // la distancia tambien se mide dando la vuelta: el ultimo sabor esta a
+      // un paso del primero, no a catorce
+      var d = i - pos;
+      d -= total * Math.round(d / total);
       Array.prototype.forEach.call(el.querySelectorAll('img[loading="lazy"]'), function(img){
-        if (!img.complete) cola.push({ lejos: Math.abs(i - pos), img: img });
+        if (!img.complete) cola.push({ lejos: Math.abs(d), img: img });
       });
     });
     cola.sort(function(a, b){ return a.lejos - b.lejos; });
@@ -2227,13 +2292,55 @@
   recalcular();
 })();
 
+/* --- guardar el catalogo en el celular --------------------------------
+   Un enlace no puede quitarse la barra del navegador por su cuenta: eso solo
+   pasa si el cliente instala el catalogo, y eso lo decide el. Chrome en
+   Android avisa con beforeinstallprompt cuando ya se puede, y ahi aparece el
+   boton del pie. Sin ese aviso no hay forma de instalar por codigo, asi que el
+   boton se queda escondido en vez de prometer algo que no va a funcionar.
+
+   El iPhone no manda ese evento y no deja instalar por boton: alli lo unico
+   que se puede hacer es explicar el camino, que es Compartir -> Agregar a
+   inicio. */
+(function(){
+  var boton = document.getElementById('instalar');
+  var ayuda = document.getElementById('instalar-ayuda');
+  if (!boton) return;
+
+  // si ya la tiene instalada, la pagina abre en modo aplicacion: nada que ofrecer
+  var yaEsApp = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+                window.navigator.standalone === true;
+  if (yaEsApp) return;
+
+  var aviso = null;
+
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();      // sin esto el navegador lo muestra donde el quiera
+    aviso = e;
+    boton.hidden = false;
+  });
+
+  boton.addEventListener('click', function(){
+    if (!aviso) return;
+    aviso.prompt();
+    aviso.userChoice.then(function(){
+      aviso = null;          // el aviso sirve una sola vez
+      boton.hidden = true;
+    });
+  });
+
+  window.addEventListener('appinstalled', function(){
+    aviso = null;
+    boton.hidden = true;
+    if (ayuda) ayuda.hidden = true;
+  });
+
+  if (/iphone|ipad|ipod/i.test(navigator.userAgent) && ayuda) ayuda.hidden = false;
+})();
+
 /* El service worker guarda el catalogo en el celular: abre al instante y sirve
    aunque el cliente este en una tienda sin senal. Los precios siguen pidiendose
-   a la red primero, asi que nunca salen viejos.
-
-   No se ofrece instalar como aplicacion a proposito: un enlace no puede
-   quitarse la barra del navegador por su cuenta, y pedirle al cliente que lo
-   agregue a la pantalla de inicio era mas estorbo que beneficio. */
+   a la red primero, asi que nunca salen viejos. */
 if ('serviceWorker' in navigator){
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('sw.js').catch(function(){});
