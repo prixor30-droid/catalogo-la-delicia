@@ -119,19 +119,62 @@
     opacity:0;animation:riseIn .7s cubic-bezier(.16,1,.3,1) .05s forwards;
   }
   /* Chewy en vez de Anton: el logo es caricaturesco y Anton, que es de
-     titular de periodico, se veia tiesa al lado. Chewy es mas ancha, asi que
-     el tamano baja un punto para que "HECHAS PARA" no se salga en celular, y
-     la altura de linea sube porque sus trazos se montan con .96. */
+     titular de periodico, se veia tiesa al lado. */
   .hero h1{
     font-family:'Chewy',cursive;font-weight:400;
     text-transform:uppercase;line-height:1.04;letter-spacing:.01em;
     font-size:clamp(31px,5.9vw,60px);
-    /* padding arriba para que el degradado recortado no se coma las tildes */
-    margin:-.16em 0 0;padding-top:.16em;
+    margin:0;
+    opacity:0;animation:riseIn .85s cubic-bezier(.16,1,.3,1) .16s forwards;
+  }
+
+  /* --- la cinta de frases ---
+     Las frases van en un tren que se repite dos veces seguidas y se corre de
+     izquierda a derecha justo lo que mide un tren. Como los dos son iguales,
+     al completar la vuelta la pantalla queda identica a como empezo y el
+     corte no se ve. El segundo tren lo clona el JS: asi el texto esta escrito
+     una sola vez y no hay riesgo de que un dia queden distintos. */
+  .cinta{
+    /* display:block a proposito: es un <span> dentro del h1, y un inline no
+       recorta lo que se le sale ni acepta los margenes negativos de abajo */
+    display:block;overflow:hidden;
+    /* los bordes se difuminan para que las frases no aparezcan cortadas de
+       golpe contra el filo de la pantalla */
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 6%,#000 94%,transparent 100%);
+            mask-image:linear-gradient(90deg,transparent 0,#000 6%,#000 94%,transparent 100%);
+  }
+  /* En celular la cinta se sale del margen de la pagina para ganar ancho de
+     lectura. Arriba de 1100px ya sobra sitio y se deja quieta, porque ahi el
+     ancho lo manda .wrap y sacarla crearia barra horizontal. */
+  @media (max-width:1100px){
+    .cinta{margin-left:-22px;margin-right:-22px;}
+  }
+  .cinta__via{
+    display:flex;width:max-content;
+    animation:correrCinta 34s linear infinite;
+    will-change:transform;
+  }
+  /* el JS ajusta la duracion segun lo que mida el tren, para que la velocidad
+     de lectura sea la misma en un celular chico y en un monitor grande */
+  @keyframes correrCinta{
+    from{transform:translateX(-50%);}
+    to{transform:translateX(0);}
+  }
+  .cinta__tren{display:flex;align-items:center;}
+  .cinta__frase{
+    flex:0 0 auto;white-space:nowrap;
+    /* el degradado se recorta contra las letras de cada frase y no contra todo
+       el titular: asi viaja con ella. El padding de arriba es para que no se
+       coma las tildes. */
+    padding-top:.16em;
     background:linear-gradient(180deg,var(--gold-2) 0%,var(--gold) 55%,var(--gold-dim) 100%);
     -webkit-background-clip:text;background-clip:text;color:transparent;
     filter:drop-shadow(0 10px 30px rgba(244,177,61,.18));
-    opacity:0;animation:riseIn .85s cubic-bezier(.16,1,.3,1) .16s forwards;
+  }
+  .cinta__sep{
+    flex:0 0 auto;align-self:center;
+    width:.2em;height:.2em;border-radius:50%;
+    background:var(--pink);margin:0 .62em;
   }
 
   /* ================= CARRUSEL ================= */
@@ -791,6 +834,12 @@
     /* la ficha entra con animación escalonada y su estado inicial es opacity:0;
        aquí se fuerza visible por si el JS no llegara a quitar las clases */
     .ficha > *{opacity:1 !important;animation:none !important;}
+    /* la cinta se para y se queda con la primera frase, centrada */
+    .cinta{-webkit-mask-image:none;mask-image:none;}
+    .cinta__via{animation:none !important;transform:none !important;width:100%;}
+    .cinta__tren{justify-content:center;width:100%;}
+    .cinta__tren + .cinta__tren{display:none;}
+    .cinta__tren > *:not(:first-child){display:none;}
   }
 
   /* Sin JS el carrusel no puede colocarse: se muestran en columna. */
@@ -798,6 +847,12 @@
   .sinjs .item{position:static;transform:none;opacity:1;margin:0 auto 40px;}
   .sinjs .meta{opacity:1;transform:none;}
   .sinjs .nav,.sinjs .puntos,.sinjs .pista{display:none;}
+  /* sin JS no se clona el segundo tren, asi que la cinta dejaria un hueco al
+     dar la vuelta: se queda quieta con la primera frase */
+  .sinjs .cinta__via{animation:none;width:100%;}
+  .sinjs .cinta__tren{justify-content:center;width:100%;}
+  .sinjs .cinta__tren + .cinta__tren{display:none;}
+  .sinjs .cinta__tren > *:not(:first-child){display:none;}
 </style>
 </head>
 <body class="sinjs">
@@ -815,7 +870,22 @@
 <div class="wrap">
   <section class="hero">
     <div class="hero__eyebrow">Catálogo de sabores</div>
-    <h1>Hechas para<br>el antojo</h1>
+    <h1>
+      <span class="cinta">
+        <span class="cinta__via" id="cinta-via">
+          <span class="cinta__tren">
+            <span class="cinta__frase">Hechas para el antojo</span>
+            <span class="cinta__sep"></span>
+            <span class="cinta__frase">Crujen como deben crujir</span>
+            <span class="cinta__sep"></span>
+            <span class="cinta__frase">Un sabor para cada gusto</span>
+            <span class="cinta__sep"></span>
+            <span class="cinta__frase">Artesanales de verdad</span>
+            <span class="cinta__sep"></span>
+          </span>
+        </span>
+      </span>
+    </h1>
   </section>
 
   <section class="carrusel" id="carrusel">
@@ -2027,6 +2097,43 @@
   });
 
   if (/iphone|ipad|ipod/i.test(navigator.userAgent) && ayuda) ayuda.hidden = false;
+})();
+
+/* --- la cinta de frases ------------------------------------------------
+   Se clona el tren de frases para que haya dos iguales seguidos: cuando el
+   primero termina de pasar, el segundo ya esta puesto donde estaba el primero
+   y la vuelta no se nota.
+
+   La duracion se calcula con lo que mide el tren, no se deja fija: asi la
+   cinta corre a los mismos pixeles por segundo en un celular chico que en un
+   monitor grande, que es lo que hace que se alcance a leer. */
+(function(){
+  var PIXELES_POR_SEGUNDO = 58;   // moderado: da tiempo a leer cada frase
+
+  var via = document.getElementById('cinta-via');
+  if (!via) return;
+  var tren = via.firstElementChild;
+  if (!tren) return;
+
+  var copia = tren.cloneNode(true);
+  copia.setAttribute('aria-hidden', 'true');   // el lector no repite las frases
+  via.appendChild(copia);
+
+  function ajustar(){
+    var ancho = tren.getBoundingClientRect().width;
+    if (!ancho) return;
+    via.style.animationDuration = Math.round(ancho / PIXELES_POR_SEGUNDO) + 's';
+  }
+
+  ajustar();
+  // Chewy llega despues que el HTML y cambia lo que mide el tren
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustar);
+
+  var espera;
+  window.addEventListener('resize', function(){
+    clearTimeout(espera);
+    espera = setTimeout(ajustar, 200);
+  });
 })();
 
 /* --- el codigo QR -----------------------------------------------------
