@@ -284,6 +284,49 @@
     filter:drop-shadow(0 22px 26px rgba(0,0,0,.6));
   }
 
+  /* --- el brillo ---
+     Cuando un paquete llega al centro, un destello diagonal lo cruza una sola
+     vez, como cuando el empaque metalizado coge la luz.
+
+     El recorte es la misma foto del sabor (--foto, que sale del <source> de la
+     tarjeta): asi el destello se queda dentro de la silueta de la bolsa y no
+     cruza el vacio de al lado. El tamano y la posicion del recorte repiten los
+     de la imagen (centrada y metida en su caja) para que calce exacto.
+
+     Se mueve el degradado y no el elemento a proposito: si se moviera el
+     elemento, el recorte se iria con el. */
+  .foto::after{
+    content:'';
+    position:absolute;inset:0;
+    z-index:3;
+    pointer-events:none;
+    opacity:0;
+    background-image:linear-gradient(104deg,
+      transparent 42%,
+      rgba(255,255,255,.34) 48%,
+      rgba(255,255,255,.62) 50%,
+      rgba(255,255,255,.34) 52%,
+      transparent 58%);
+    background-repeat:no-repeat;
+    background-size:300% 100%;
+    -webkit-mask-size:contain;mask-size:contain;
+    -webkit-mask-position:center;mask-position:center;
+    -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  }
+  /* El recorte se nombra solo en la tarjeta del centro. Si estuviera en la
+     regla de arriba, el navegador bajaria las quince fotos de una para usarlas
+     de mascara y se perderia la carga perezosa de las que no se ven. */
+  .item.activo .foto::after{
+    -webkit-mask-image:var(--foto);mask-image:var(--foto);
+    animation:brillar 1.05s ease-out .3s;
+  }
+  @keyframes brillar{
+    0%  {opacity:0;background-position:100% 0;}
+    16% {opacity:1;}
+    84% {opacity:1;}
+    100%{opacity:0;background-position:0% 0;}
+  }
+
   /* ---------- cara frente / reverso ---------- */
   .flip{
     position:absolute;inset:0;
@@ -910,7 +953,7 @@
 
     <div class="escena" id="escena">
 
-      <article class="item" style="--spot-c2:#00b5a5;">
+      <article class="item" style="--spot-c2:#00b5a5;--foto:url('bbq.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -926,7 +969,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#e62239;">
+      <article class="item" style="--spot-c2:#e62239;--foto:url('limon.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -942,7 +985,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#1f6fe0;">
+      <article class="item" style="--spot-c2:#1f6fe0;--foto:url('carita-feliz.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -958,7 +1001,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#00a8b5;">
+      <article class="item" style="--spot-c2:#00a8b5;--foto:url('pollo.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -974,7 +1017,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#45b71f;">
+      <article class="item" style="--spot-c2:#45b71f;--foto:url('parrillada.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -990,7 +1033,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#3b4fd8;">
+      <article class="item" style="--spot-c2:#3b4fd8;--foto:url('chorizo-limon.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -1006,7 +1049,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#e8452b;">
+      <article class="item" style="--spot-c2:#e8452b;--foto:url('mayonesa.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -1022,7 +1065,7 @@
         </div>
       </article>
 
-      <article class="item tiene-reverso" style="--spot-c2:#0e86c4;">
+      <article class="item tiene-reverso" style="--spot-c2:#0e86c4;--foto:url('queso.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto">
@@ -1047,7 +1090,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#3355d8;">
+      <article class="item" style="--spot-c2:#3355d8;--foto:url('almuerzo-pollo.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -1063,7 +1106,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#7b2fd1;">
+      <article class="item" style="--spot-c2:#7b2fd1;--foto:url('almuerzo-limon.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -1079,7 +1122,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#00b39a;">
+      <article class="item" style="--spot-c2:#00b39a;--foto:url('almuerzo-picante.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -1095,7 +1138,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#e01e37;">
+      <article class="item" style="--spot-c2:#e01e37;--foto:url('fosforito.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -1111,7 +1154,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#e8701a;">
+      <article class="item" style="--spot-c2:#e8701a;--foto:url('fosforito-x10.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -1127,7 +1170,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#1273d4;">
+      <article class="item" style="--spot-c2:#1273d4;--foto:url('mega.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
@@ -1143,7 +1186,7 @@
         </div>
       </article>
 
-      <article class="item" style="--spot-c2:#6b34d4;">
+      <article class="item" style="--spot-c2:#6b34d4;--foto:url('megaton.webp');">
         <div class="tarjeta">
           <div class="spot"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50,6 94,50 50,94 6,50"/></svg></div>
           <div class="foto"><picture>
