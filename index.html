@@ -503,10 +503,13 @@
     color:#6d6558;
   }
 
-  /* ---------- instalar ---------- */
-  /* Solo se ve cuando el navegador avisa que ya se puede instalar. */
-  .instalar{
-    display:block;margin:16px auto 0;
+  /* ---------- botones del pie ---------- */
+  /* Van en una fila que se parte sola cuando no caben, porque el de instalar
+     aparece y desaparece segun el navegador. */
+  .pie-acciones{
+    display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:18px;
+  }
+  .pie-boton{
     border:1px solid var(--gold-dim);border-radius:999px;
     background:transparent;color:var(--gold);
     padding:11px 24px;
@@ -515,8 +518,36 @@
     cursor:pointer;
     transition:background .25s;
   }
-  .instalar:hover{background:rgba(244,177,61,.1);}
+  .pie-boton:hover{background:rgba(244,177,61,.1);}
+  /* Con el enlace de pedidos el carrito flota en la esquina de abajo y tapaba
+     el boton del QR: se le deja aire al pie para que quede por encima. */
+  .carrito:not([hidden]) ~ footer{padding-bottom:calc(94px + env(safe-area-inset-bottom));}
   .instalar__ayuda{margin-top:12px;font-size:12px;line-height:1.7;}
+
+  /* --- el codigo QR --- */
+  .qr{
+    position:fixed;inset:0;z-index:70;
+    display:flex;align-items:center;justify-content:center;padding:18px;
+  }
+  /* sin esto el display:flex de arriba le gana al atributo hidden */
+  .qr[hidden]{display:none;}
+  .qr__fondo{position:absolute;inset:0;background:rgba(0,0,0,.82);}
+  .qr__caja{
+    position:relative;width:100%;max-width:360px;max-height:92vh;overflow-y:auto;
+    background:#0a0a0a;border:1px solid var(--line);border-radius:20px;
+    animation:asomarQr .22s ease-out;
+  }
+  @keyframes asomarQr{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+  .qr__cuerpo{padding:16px 18px 20px;text-align:center;}
+  /* El codigo va negro sobre blanco aunque el catalogo sea negro: con los
+     colores al reves hay camaras que no lo leen. */
+  .qr__foto{
+    display:block;width:100%;max-width:270px;height:auto;margin:0 auto;
+    background:#fff;border-radius:12px;
+  }
+  .qr__nota{margin:14px 0 0;color:var(--text-dim);font-size:12.5px;line-height:1.6;}
+  .qr__enlace{margin-top:8px;font-size:11.5px;line-height:1.5;color:var(--gold);word-break:break-all;}
+  .qr__compartir{margin-top:16px;}
 
   /* ---------- footer ---------- */
   /* --- precio por cantidad ---------------------------------------------
@@ -1148,11 +1179,36 @@
   <div><b>La Delicia</b> — Papas fritas artesanales</div>
   <div>Los precios marcados <b>docena</b> corresponden a 12 unidades; los marcados <b>c/u</b> son por bolsa.</div>
   <div>Precios sujetos a cambio sin previo aviso.</div>
-  <button class="instalar" id="instalar" type="button" hidden>Guardar en mi celular</button>
+  <div class="pie-acciones">
+    <button class="pie-boton" id="instalar" type="button" hidden>Guardar en mi celular</button>
+    <button class="pie-boton" id="ver-qr" type="button">Código QR</button>
+  </div>
   <div class="instalar__ayuda" id="instalar-ayuda" hidden>
     Para dejarlo como aplicacion: toca <b>Compartir</b> y luego <b>Agregar a inicio</b>.
   </div>
 </footer>
+
+<!-- La imagen del QR viene hecha en vez de dibujarse con codigo: la direccion
+     del catalogo no cambia nunca, asi que sobra cargar una libreria para
+     redibujar siempre lo mismo. De paso abre sin senal y el cliente puede
+     dejarla pulsada para guardarla o mandarla. -->
+<div class="qr" id="qr" hidden role="dialog" aria-modal="true" aria-labelledby="titulo-qr">
+  <div class="qr__fondo" id="qr-fondo"></div>
+  <div class="qr__caja">
+    <div class="hoja__cabeza">
+      <h2 id="titulo-qr">Código QR</h2>
+      <button class="hoja__cerrar" id="cerrar-qr" type="button" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="qr__cuerpo">
+      <img class="qr__foto" id="qr-foto" src="qr-catalogo.png" width="1080" height="1080"
+           alt="Código QR que abre el catálogo de La Delicia" loading="lazy">
+      <p class="qr__nota">Apúntale la cámara del celular y se abre el catálogo.
+        Deja la imagen pulsada para guardarla o mandarla.</p>
+      <div class="qr__enlace">prixor30-droid.github.io/catalogo-la-delicia</div>
+      <button class="pie-boton qr__compartir" id="compartir-qr" type="button">Compartir enlace</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -1970,6 +2026,63 @@
   });
 
   if (/iphone|ipad|ipod/i.test(navigator.userAgent) && ayuda) ayuda.hidden = false;
+})();
+
+/* --- el codigo QR -----------------------------------------------------
+   Para pasar el catalogo sin dictar la direccion ni buscar el chat: se muestra
+   en la pantalla y el otro celular lo apunta con la camara. Tambien sirve para
+   sacarle foto e imprimirlo en un adhesivo o en el mostrador. */
+(function(){
+  var ENLACE = 'https://prixor30-droid.github.io/catalogo-la-delicia/';
+
+  var panel      = document.getElementById('qr');
+  var abrir      = document.getElementById('ver-qr');
+  var cerrarBtn  = document.getElementById('cerrar-qr');
+  var fondo      = document.getElementById('qr-fondo');
+  var compartir  = document.getElementById('compartir-qr');
+  if (!panel || !abrir) return;
+
+  function mostrar(){
+    panel.hidden = false;
+    document.body.classList.add('hoja-abierta');
+    cerrarBtn.focus();
+  }
+
+  function cerrar(){
+    panel.hidden = true;
+    document.body.classList.remove('hoja-abierta');
+    abrir.focus();
+  }
+
+  abrir.addEventListener('click', mostrar);
+  cerrarBtn.addEventListener('click', cerrar);
+  fondo.addEventListener('click', cerrar);
+  window.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !panel.hidden) cerrar();
+  });
+
+  /* En el celular abre la bandeja de compartir, que es donde el dueno escoge a
+     quien mandarselo. En el computador no hay bandeja: se copia el enlace. */
+  compartir.addEventListener('click', function(){
+    var texto = compartir.textContent;
+
+    function avisar(mensaje){
+      compartir.textContent = mensaje;
+      setTimeout(function(){ compartir.textContent = texto; }, 2200);
+    }
+
+    if (navigator.share){
+      navigator.share({ title: 'Catálogo La Delicia', url: ENLACE }).catch(function(){});
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ENLACE)
+        .then(function(){ avisar('Enlace copiado'); })
+        .catch(function(){ avisar('Copialo de arriba'); });
+      return;
+    }
+    avisar('Copialo de arriba');
+  });
 })();
 
 /* El service worker guarda el catalogo en el celular: abre al instante y sirve
