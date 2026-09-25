@@ -707,16 +707,6 @@
     background:none;background-color:rgba(255,255,255,.07);
     color:var(--text-dim);box-shadow:none;
   }
-  .secundarios{display:flex;gap:9px;margin:14px 0 4px;}
-  .secundario{
-    flex:1 1 0;min-width:0;
-    font-family:'Poppins',sans-serif;font-weight:600;font-size:13px;
-    color:var(--text);background:transparent;border:1px solid var(--line);
-    border-radius:12px;padding:12px 16px;cursor:pointer;
-  }
-  .secundario:active{background:rgba(255,255,255,.06);}
-  @media (max-width:340px){ .secundarios{flex-direction:column;} }
-  .secundario[disabled]{opacity:.5;cursor:default;}
   .res-falta{
     display:block;margin-top:2px;color:var(--gold);font-weight:600;
   }
@@ -1143,10 +1133,6 @@
                  placeholder="300 123 4567" maxlength="20">
         </label>
 
-        <div class="secundarios" id="secundarios" hidden>
-          <button class="secundario" id="bajar-comprobante" type="button">Descargar</button>
-          <button class="secundario" id="imprimir-comprobante" type="button">Imprimir</button>
-        </div>
       </div>
     </div>
     <div class="resumen" id="resumen">
@@ -1587,17 +1573,6 @@
   } catch (e) {}
   if (!encendido) return;
 
-  /* El comprobante no es para el tendero: es para una sola persona, y se
-     enciende con un parametro aparte (&recibo=1). Con el enlace normal de
-     pedidos ni aparecen los botones. Igual que con los pedidos, se recuerda
-     en el celular para no tener que guardar el enlace largo. */
-  var recibo = false;
-  try {
-    recibo = new URLSearchParams(location.search).get('recibo') === '1';
-    if (recibo) localStorage.setItem(LLAVE + '-recibo', '1');
-    else if (localStorage.getItem(LLAVE + '-recibo') === '1') recibo = true;
-  } catch (e) {}
-
   /* --- productos, leidos de las mismas tarjetas del catalogo --------------
      Asi los precios siguen viviendo en un solo sitio: si se cambia el de una
      tarjeta, el del pedido cambia solo. */
@@ -1826,300 +1801,6 @@
     return l.join('\n');
   }
 
-  /* ---------------------------------------------------------------------
-     Comprobante en imagen
-
-     El pedido no viaja como imagen sino como texto, porque un enlace wa.me
-     cae directo en el chat de La Delicia y el cliente solo da enviar. Mandar
-     la imagen obligaria a pasar por la bandeja del celular, escoger WhatsApp
-     y luego el contacto: dos toques mas y el riesgo de que el pedido termine
-     en otra conversacion. El comprobante se descarga aparte, para el que lo
-     quiera guardar.
-
-     El ticket se dibuja en un canvas y no con una libreria: son cuatro clases
-     de texto y dos lineas, no vale la pena bajar 200 KB, y asi sigue
-     funcionando sin senal como el resto del catalogo. */
-  var LOGO = 'logo-recibo.png';
-  var NIT  = '37005108-4';
-
-  var logoCargado = null;
-  function cargarLogo(){
-    if (logoCargado) return logoCargado;
-    logoCargado = new Promise(function(listo){
-      var im = new Image();
-      im.onload  = function(){ listo(im); };
-      im.onerror = function(){ listo(null); };   // sin logo el ticket igual sale
-      im.src = LOGO;
-    });
-    return logoCargado;
-  }
-
-  function dosDigitos(n){ return (n < 10 ? '0' : '') + n; }
-
-  function referencia(f){
-    return 'PD-' + String(f.getFullYear()).slice(2) + dosDigitos(f.getMonth() + 1) +
-           dosDigitos(f.getDate()) + '-' + dosDigitos(f.getHours()) + dosDigitos(f.getMinutes());
-  }
-
-  /* Parte un texto en renglones que quepan en el ancho dado. */
-  function envolver(ctx, texto, ancho){
-    var palabras = String(texto).split(/\s+/);
-    var lineas = [], actual = '';
-    for (var i = 0; i < palabras.length; i++){
-      var prueba = actual ? actual + ' ' + palabras[i] : palabras[i];
-      if (ctx.measureText(prueba).width > ancho && actual){
-        lineas.push(actual);
-        actual = palabras[i];
-      } else {
-        actual = prueba;
-      }
-    }
-    if (actual) lineas.push(actual);
-    return lineas;
-  }
-
-  /* Dibuja el ticket. Con medir=true no pinta nada: solo devuelve el alto que
-     va a ocupar, que depende de cuantos sabores lleve y de cuanto ocupe la
-     direccion. */
-  function ticket(ctx, datos, logo, medir){
-    var W = 380, padX = 22, anchoUtil = W - padX * 2;
-    var y = 26;
-    var gris = '#455A64', oscuro = '#0D1B2A', texto = '#263238';
-
-    function centrado(t, fuente, color, salto){
-      if (!medir){
-        ctx.font = fuente; ctx.fillStyle = color; ctx.textAlign = 'center';
-        ctx.fillText(t, W / 2, y);
-      }
-      y += salto;
-    }
-    function izquierda(t, fuente, color, salto){
-      if (!medir){
-        ctx.font = fuente; ctx.fillStyle = color; ctx.textAlign = 'left';
-        ctx.fillText(t, padX, y);
-      }
-      y += salto;
-    }
-    function punteada(){
-      if (!medir){
-        ctx.strokeStyle = '#9AA5B1'; ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath(); ctx.moveTo(padX, y); ctx.lineTo(W - padX, y); ctx.stroke();
-        ctx.setLineDash([]);
-      }
-      y += 14;
-    }
-
-    // logo
-    if (logo){
-      var anchoLogo = 190, altoLogo = logo.height * (anchoLogo / logo.width);
-      if (!medir) ctx.drawImage(logo, (W - anchoLogo) / 2, y, anchoLogo, altoLogo);
-      y += altoLogo + 14;
-    } else {
-      y += 4;
-    }
-
-    centrado('PRODUCTOS LA DELICIA', '800 15px Poppins, Arial, sans-serif', oscuro, 15);
-    centrado('NIT: ' + NIT, '400 11px Poppins, Arial, sans-serif', gris, 14);
-    /* Dice "comprobante de pedido" y no "factura": una factura de venta en
-       Colombia va numerada y autorizada por la DIAN, y la de verdad la emite
-       la app de inventario cuando la venta se hace. */
-    centrado('Comprobante de pedido', '600 11px Poppins, Arial, sans-serif', gris, 14);
-    centrado('No. ' + datos.ref, '400 11px Poppins, Arial, sans-serif', gris, 10);
-
-    punteada();
-
-    izquierda('Fecha: ' + datos.fecha, '400 11.5px Poppins, Arial, sans-serif', texto, 16);
-    izquierda('Local: ' + datos.local, '400 11.5px Poppins, Arial, sans-serif', texto, 16);
-
-    if (!medir) ctx.font = '400 11.5px Poppins, Arial, sans-serif';
-    else ctx.font = '400 11.5px Poppins, Arial, sans-serif';
-    var dir = envolver(ctx, 'Direccion: ' + datos.dir, anchoUtil);
-    for (var d = 0; d < dir.length; d++){
-      izquierda(dir[d], '400 11.5px Poppins, Arial, sans-serif', texto, 16);
-    }
-    izquierda('Telefono: ' + datos.tel, '400 11.5px Poppins, Arial, sans-serif', texto, 10);
-
-    punteada();
-
-    // sabores
-    for (var i = 0; i < datos.items.length; i++){
-      var it = datos.items[i];
-      if (!medir){
-        ctx.fillStyle = '#000';
-        ctx.beginPath(); ctx.arc(padX + 4, y - 4, 3.5, 0, Math.PI * 2); ctx.fill();
-      }
-      if (!medir){
-        ctx.font = '600 11.5px Poppins, Arial, sans-serif';
-        ctx.fillStyle = oscuro; ctx.textAlign = 'left';
-        ctx.fillText(it.nombre.toUpperCase(), padX + 14, y);
-      }
-      y += 15;
-
-      if (!medir){
-        ctx.font = '400 11.5px Poppins, Arial, sans-serif';
-        ctx.fillStyle = gris;
-        ctx.textAlign = 'left';  ctx.fillText(it.detalle, padX, y);
-        ctx.textAlign = 'right'; ctx.fillText(it.total, W - padX, y);
-      }
-      y += 9;
-
-      if (!medir && i < datos.items.length - 1){
-        ctx.strokeStyle = '#E0E0E0'; ctx.lineWidth = 1;
-        ctx.setLineDash([1, 3]);
-        ctx.beginPath(); ctx.moveTo(padX, y); ctx.lineTo(W - padX, y); ctx.stroke();
-        ctx.setLineDash([]);
-      }
-      y += 10;
-    }
-
-    punteada();
-
-    if (datos.cuenta){
-      izquierda(datos.cuenta, '600 11px Poppins, Arial, sans-serif', gris, 16);
-    }
-
-    // total, entre dos rayas gruesas como en la app
-    y += 2;
-    if (!medir){
-      ctx.strokeStyle = oscuro; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(padX, y); ctx.lineTo(W - padX, y); ctx.stroke();
-    }
-    y += 20;
-    if (!medir){
-      ctx.font = '800 16px Poppins, Arial, sans-serif'; ctx.fillStyle = oscuro;
-      ctx.textAlign = 'left';  ctx.fillText('TOTAL', padX, y);
-      ctx.textAlign = 'right'; ctx.fillText(datos.total, W - padX, y);
-    }
-    y += 8;
-    if (!medir){
-      ctx.strokeStyle = oscuro; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(padX, y); ctx.lineTo(W - padX, y); ctx.stroke();
-    }
-    y += 16;
-
-    if (datos.nota){
-      ctx.font = '400 10.5px Poppins, Arial, sans-serif';
-      var nl = envolver(ctx, datos.nota, anchoUtil);
-      for (var k = 0; k < nl.length; k++){
-        centrado(nl[k], '400 10.5px Poppins, Arial, sans-serif', '#8a5a17', 14);
-      }
-      y += 4;
-    }
-
-    punteada();
-    centrado('¡Gracias por su pedido!', '400 11px Poppins, Arial, sans-serif', '#78909C', 0);
-    y += 22;
-
-    return y;
-  }
-
-  /* Arma la imagen del comprobante y la devuelve como archivo PNG. */
-  function comprobante(){
-    var ahora = new Date();
-    var sueltas = 0;
-    productos.forEach(function(p){ if (!p.porDocena) sueltas += p.cantidad; });
-
-    var items = [];
-    productos.forEach(function(p){
-      if (!p.cantidad) return;
-      var unitario = p.porDocena ? estado.precioDoc : p.precio;
-      var unidad = p.porDocena ? (p.cantidad === 1 ? 'docena' : 'docenas')
-                               : (p.cantidad === 1 ? 'bolsa'  : 'bolsas');
-      items.push({
-        nombre: p.nombre,
-        detalle: p.cantidad + ' ' + unidad + ' × ' + pesos(unitario),
-        total: pesos(p.cantidad * unitario)
-      });
-    });
-
-    var cuenta = [];
-    if (estado.docenas > 0){
-      cuenta.push(estado.docenas + (estado.docenas === 1 ? ' docena' : ' docenas') +
-                  ' (' + (estado.docenas * 12) + ' paquetes)');
-    }
-    if (sueltas > 0){
-      cuenta.push(sueltas + (sueltas === 1 ? ' bolsa suelta' : ' bolsas sueltas'));
-    }
-
-    var datos = {
-      ref: referencia(ahora),
-      fecha: ahora.toLocaleDateString('es-CO') + ' · ' +
-             dosDigitos(ahora.getHours()) + ':' + dosDigitos(ahora.getMinutes()),
-      local: campos.local.value.trim(),
-      dir:   campos.dir.value.trim(),
-      tel:   campos.tel.value.trim(),
-      items: items,
-      cuenta: cuenta.length ? 'En total: ' + cuenta.join(' y ') : '',
-      total: pesos(estado.total),
-      nota: (estado.docenas > 0 && estado.docenas < MINIMO)
-              ? 'Pedido de menos de ' + MINIMO + ' docenas: la entrega puede tardar hasta 4 dias.'
-              : ''
-    };
-
-    return cargarLogo().then(function(logo){
-      var medidor = document.createElement('canvas').getContext('2d');
-      var alto = ticket(medidor, datos, logo, true);
-
-      // x2 para que no salga borrosa al verla en el celular
-      var escala = 2;
-      var lienzo = document.createElement('canvas');
-      lienzo.width = 380 * escala;
-      lienzo.height = Math.ceil(alto) * escala;
-      var ctx = lienzo.getContext('2d');
-      ctx.scale(escala, escala);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, 380, alto);
-      ctx.textBaseline = 'alphabetic';
-      ticket(ctx, datos, logo, false);
-
-      return new Promise(function(listo){
-        lienzo.toBlob(function(blob){
-          listo({ blob: blob, nombre: datos.ref + '.png' });
-        }, 'image/png');
-      });
-    });
-  }
-
-  function descargar(img){
-    var url = URL.createObjectURL(img.blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = img.nombre;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-  }
-
-  /* Imprime sin pasar por la descarga. Va en un marco escondido y no en una
-     ventana nueva porque el navegador del celular bloquea las ventanas que no
-     nacen de un toque directo. El ancho de 80 mm es el del rollo de las
-     impresoras de tirilla; en hoja normal sale centrado. */
-  function imprimir(img){
-    var url = URL.createObjectURL(img.blob);
-    var marco = document.createElement('iframe');
-    marco.setAttribute('aria-hidden', 'true');
-    marco.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
-    marco.srcdoc =
-      '<!doctype html><html><head><meta charset="utf-8">' +
-      '<style>@page{margin:6mm}html,body{margin:0;padding:0}' +
-      'img{width:80mm;display:block;margin:0 auto}</style></head>' +
-      '<body><img src="' + url + '"></body></html>';
-
-    marco.onload = function(){
-      var v = marco.contentWindow;
-      var im = marco.contentDocument.images[0];
-      var lanzar = function(){
-        try { v.focus(); v.print(); } catch (e) {}
-        // el marco se queda un rato: quitarlo de una cancela la impresion
-        setTimeout(function(){
-          marco.remove();
-          URL.revokeObjectURL(url);
-        }, 60000);
-      };
-      if (im && !im.complete) im.onload = lanzar; else lanzar();
-    };
-    document.body.appendChild(marco);
-  }
-
   /* Firma del pedido, para no meter la misma fila dos veces si el cliente
      vuelve de WhatsApp y toca enviar otra vez sin cambiar nada. */
   var ultimoGuardado = null;
@@ -2212,57 +1893,12 @@
        bloquea por ventana emergente. El guardado no espera a nadie. */
     guardarPedido();
 
-    /* Texto y no imagen: el enlace wa.me cae directo en el chat de La Delicia
-       y el cliente solo da enviar. Compartir la imagen abriria la bandeja del
-       celular, donde toca escoger WhatsApp y despues el contacto, y ahi el
-       pedido se puede ir a otra persona por equivocacion. */
+    /* El pedido viaja como texto: el enlace wa.me cae directo en el chat de
+       La Delicia y el cliente solo da enviar. El comprobante para imprimir
+       sale de la app de inventario, en la vista Pedidos, que es donde llega
+       este mismo pedido. */
     porTexto();
   });
-
-  /* El comprobante queda aparte, para el que quiera guardarlo. */
-  var btnBajar = document.getElementById('bajar-comprobante');
-  /* Sin productos o sin datos no hay comprobante que valga: saldria un ticket
-     sin nombre ni direccion. Vale para descargar y para imprimir. */
-  function listoParaComprobante(){
-    if (!estado.total){
-      detalle.innerHTML = '<b>' + pesos(estado.total) + '</b>' +
-                          'Marca primero lo que vas a pedir';
-      return false;
-    }
-    var faltan = faltantes();
-    if (faltan.length){
-      faltan.forEach(function(k){ campos[k].classList.add('falta'); });
-      campos[faltan[0]].scrollIntoView({ block: 'center', behavior: 'smooth' });
-      campos[faltan[0]].focus({ preventScroll: true });
-      return false;
-    }
-    return true;
-  }
-
-  btnBajar.addEventListener('click', function(){
-    if (!listoParaComprobante()) return;
-    armar(btnBajar, descargar);
-  });
-
-  document.getElementById('imprimir-comprobante')
-    .addEventListener('click', function(){
-      if (!listoParaComprobante()) return;
-      armar(this, imprimir);
-    });
-
-  /* Dibuja el comprobante y se lo pasa a quien lo pidio, descargar o
-     imprimir, mientras el boton avisa que esta trabajando. */
-  function armar(boton, hacer){
-    var etiqueta = boton.textContent;
-    boton.disabled = true;
-    boton.textContent = 'Armando...';
-    comprobante().then(function(img){
-      hacer(img);
-    }).catch(function(){}).then(function(){
-      boton.disabled = false;
-      boton.textContent = etiqueta;
-    });
-  }
 
   /* --- abrir y cerrar la hoja --- */
   var ultimoFoco = null;
@@ -2285,8 +1921,6 @@
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape' && !hoja.hidden) cerrar();
   });
-
-  if (recibo) document.getElementById('secundarios').hidden = false;
 
   btnCarrito.hidden = false;
   recalcular();
