@@ -1771,11 +1771,14 @@
 })();
 
 /* ===================== PEDIDOS =====================
-   Solo se enciende con el enlace de pedidos (?pedidos=1). Sin eso, el catalogo
-   es el mismo de siempre y el cliente comun no ve carrito ni totales.
+   Esta puesto para todo el mundo. Antes hacia falta entrar con ?pedidos=1,
+   pero ese enlace nunca protegio nada: la llave publicable que guarda el
+   pedido siempre estuvo dentro de esta misma pagina, asi que quien quisiera
+   mandar uno sin el enlace ya podia. Era comodidad, no candado, y tener dos
+   enlaces que repartir costaba mas de lo que servia.
 
-   No es una clave: quien reciba el enlace puede reenviarlo. Sirve para separar
-   al que solo mira del que compra al por mayor, no para proteger nada. */
+   Ahora hay un solo enlace: el mismo sirve para mirar y para pedir, y es el
+   que lleva el codigo QR. */
 (function(){
   /* Numero al que llegan los pedidos, en formato internacional y sin signos:
      57 (Colombia) + el celular. Ejemplo: 573001234567.
@@ -1826,17 +1829,9 @@
   };
   if (!btnCarrito || !contenedor) return;
 
-  /* --- se enciende? --- */
-  var pedidoEnUrl = false;
-  try { pedidoEnUrl = new URLSearchParams(location.search).get('pedidos') === '1'; } catch (e) {}
-
-  var encendido = pedidoEnUrl;
-  try {
-    if (pedidoEnUrl) localStorage.setItem(LLAVE + '-activo', '1');
-    // si ya entro alguna vez con el enlace, no se le vuelve a pedir
-    else if (localStorage.getItem(LLAVE + '-activo') === '1') encendido = true;
-  } catch (e) {}
-  if (!encendido) return;
+  /* La marca que recordaba el enlace de pedidos ya no sirve para nada: se
+     borra de los celulares que la tengan guardada de antes. */
+  try { localStorage.removeItem(LLAVE + '-activo'); } catch (e) {}
 
   /* --- productos, leidos de las mismas tarjetas del catalogo --------------
      Asi los precios siguen viviendo en un solo sitio: si se cambia el de una
