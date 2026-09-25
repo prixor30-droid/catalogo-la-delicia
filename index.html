@@ -138,17 +138,17 @@
     /* display:block a proposito: es un <span> dentro del h1, y un inline no
        recorta lo que se le sale ni acepta los margenes negativos de abajo */
     display:block;overflow:hidden;
-    /* los bordes se difuminan para que las frases no aparezcan cortadas de
-       golpe contra el filo de la pantalla */
-    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 6%,#000 94%,transparent 100%);
-            mask-image:linear-gradient(90deg,transparent 0,#000 6%,#000 94%,transparent 100%);
+    /* la banda amarilla. El texto va oscuro encima: el dorado sobre dorado no
+       se leeria. */
+    padding:.12em 0 .18em;
+    background:linear-gradient(180deg,var(--gold-2),var(--gold));
+    box-shadow:0 12px 34px rgba(244,177,61,.22);
   }
-  /* En celular la cinta se sale del margen de la pagina para ganar ancho de
-     lectura. Arriba de 1100px ya sobra sitio y se deja quieta, porque ahi el
-     ancho lo manda .wrap y sacarla crearia barra horizontal. */
-  @media (max-width:1100px){
-    .cinta{margin-left:-22px;margin-right:-22px;}
-  }
+  /* La banda se sale del margen de la pagina para cruzarla de lado a lado. Con
+     -22px (lo que .wrap trae de padding) nunca se pasa del ancho de la
+     ventana: en celular llega justo a los dos filos y en pantalla grande se
+     queda en los 1180px de .wrap. Con 100vw si habria barra horizontal. */
+  .cinta{margin-left:-22px;margin-right:-22px;}
   .cinta__via{
     display:flex;width:max-content;
     animation:correrCinta 34s linear infinite;
@@ -163,18 +163,12 @@
   .cinta__tren{display:flex;align-items:center;}
   .cinta__frase{
     flex:0 0 auto;white-space:nowrap;
-    /* el degradado se recorta contra las letras de cada frase y no contra todo
-       el titular: asi viaja con ella. El padding de arriba es para que no se
-       coma las tildes. */
-    padding-top:.16em;
-    background:linear-gradient(180deg,var(--gold-2) 0%,var(--gold) 55%,var(--gold-dim) 100%);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-    filter:drop-shadow(0 10px 30px rgba(244,177,61,.18));
+    color:#1a1410;
   }
   .cinta__sep{
     flex:0 0 auto;align-self:center;
     width:.2em;height:.2em;border-radius:50%;
-    background:var(--pink);margin:0 .62em;
+    background:#1a1410;opacity:.5;margin:0 .62em;
   }
 
   /* ================= CARRUSEL ================= */
@@ -835,7 +829,6 @@
        aquí se fuerza visible por si el JS no llegara a quitar las clases */
     .ficha > *{opacity:1 !important;animation:none !important;}
     /* la cinta se para y se queda con la primera frase, centrada */
-    .cinta{-webkit-mask-image:none;mask-image:none;}
     .cinta__via{animation:none !important;transform:none !important;width:100%;}
     .cinta__tren{justify-content:center;width:100%;}
     .cinta__tren + .cinta__tren{display:none;}
