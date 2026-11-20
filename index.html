@@ -450,6 +450,46 @@
     margin-bottom:8px;
   }
   .etiqueta:empty{display:none;}
+
+  /* --- lo que se acabo ---------------------------------------------------
+     El sabor en cero no se esconde: se deja a la vista y apagado. El catalogo
+     tambien es la vitrina, y si el sabor desaparece, el tendero que entro
+     buscandolo cree que nunca lo tuvimos.
+
+     Se apagan la foto y el precio, nunca el .item entero: el carrusel le
+     escribe el filter en el estilo a cada cuadro (ver DESENF) y cualquier
+     cosa que se le ponga desde aqui se pierde. */
+  .item.agotado .foto img{
+    opacity:.45;
+    /* El drop-shadow va repetido porque filter no se suma: ponerle solo el
+       grayscale le quitaba la sombra y la bolsa quedaba flotando. */
+    filter:grayscale(.9) drop-shadow(0 22px 26px rgba(0,0,0,.6));
+  }
+  /* El rombo de color tambien baja: a todo color detras de una bolsa apagada
+     no se leia "agotado", se leia "foto mala". El .item.activo .spot lo deja
+     en 1, y esto gana por venir despues con la misma especificidad. */
+  .item.agotado .spot{opacity:.2;}
+  .item.agotado .precio{
+    background:none;color:var(--text-dim);
+    border:1px solid var(--line);box-shadow:none;
+  }
+  /* El sello va aparte de la etiqueta y no encima: Fosforito dice "140 g",
+     Mega dice "Economico" y eso lo necesita el cliente para saber que esta
+     comprando. Si el sabor se acaba, los dos recados caben al lado. */
+  .sello,
+  .ficha__sello{
+    display:none;
+    font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text-dim);
+    background:rgba(255,255,255,.05);
+    border:1px solid var(--line);
+    padding:3px 10px;border-radius:999px;
+    margin-bottom:8px;
+  }
+  .etiqueta:not(:empty) + .sello{margin-left:6px;}
+  .item.agotado .sello{display:inline-block;}
+  .ficha.agotado .ficha__sello{display:inline-block;margin-bottom:12px;}
+  .ficha.agotado .ficha__precio{filter:grayscale(1);}
   .nombre{
     font-family:'Anton',sans-serif;font-weight:400;
     text-transform:uppercase;letter-spacing:.01em;
@@ -920,6 +960,17 @@
   }
   .fila-pedido.tiene .fp-sub{color:var(--gold);}
 
+  /* Lo que queda de ese sabor, debajo del paso. Vacio no ocupa renglon. */
+  .fp-resto{
+    font-size:10.5px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--gold-dim);
+  }
+  .fp-resto:empty{display:none;}
+  .fila-pedido.agotado .fp-resto{color:var(--text-dim);}
+  .fila-pedido.agotado img{opacity:.3;}
+  .paso button:disabled{opacity:.25;cursor:default;}
+  .paso input:disabled{color:var(--text-dim);}
+
   /* --- datos de entrega y aviso --- */
   .datos{border-top:1px solid var(--line);margin-top:6px;padding:14px 0 6px;}
   .datos h3{
@@ -1095,6 +1146,7 @@
          de sabor se anuncia a quien use lector de pantalla. -->
     <div class="ficha" id="ficha" aria-live="polite">
       <div class="ficha__etiqueta"></div>
+      <div class="ficha__sello">Agotado</div>
       <h2 class="ficha__nombre"></h2>
       <p class="ficha__desc"></p>
       <div class="ficha__precio"></div>
@@ -1683,6 +1735,9 @@
     if (!el) return;
     var tomar = function(sel){ var n = el.querySelector(sel); return n ? n.innerHTML : ''; };
     var pintar = function(){
+      /* Que el sabor este agotado se copia igual que el resto: la clase la
+         dejo puesta el disponible en el <article>, y la ficha la refleja. */
+      ficha.classList.toggle('agotado', el.classList.contains('agotado'));
       ficha.querySelector('.ficha__etiqueta').textContent = (el.querySelector('.etiqueta') || {}).textContent || '';
       ficha.querySelector('.ficha__nombre').textContent   = (el.querySelector('.nombre')  || {}).textContent || '';
       ficha.querySelector('.ficha__desc').textContent     = (el.querySelector('.desc')    || {}).textContent || '';
@@ -1962,14 +2017,27 @@
      las docenas: las bolsas sueltas no suman. */
   var MINIMO = 10;
 
+  /* Lo que se marca cuando no se sabe cuanto hay. Es el mismo numero que
+     responde la vista stock_catalogo cuando en la fabrica hay de sobra: asi
+     un sabor con 400 docenas y un sabor del que no llego respuesta se
+     comportan igual, que es "pide lo que necesites". */
+  var SIN_TOPE = 999;
+
+  /* Desde aqui para abajo se le dice al tendero cuanto queda. Mas arriba el
+     numero no le sirve para decidir y solo cuenta cuanto tenemos. */
+  var AVISAR_DESDE = 24;
+
   /* Donde queda guardado el pedido para que aparezca en la lista de la app de
      inventario. Esta llave es la PUBLICABLE y esta a la vista de cualquiera
      que mire el codigo de esta pagina: asi funciona, no es un descuido. Lo
      unico que puede hacer es insertar filas en pedidos_catalogo, que es el
-     unico permiso que tiene en la base. No puede leer esa tabla ni ninguna
-     otra, ni borrar, ni tocar inventario, ventas o caja: eso lo decide la
-     politica de RLS, no el secreto de la llave. Ver add_pedidos_catalogo.sql
-     en el proyecto de inventario.
+     unico permiso de escritura que tiene en la base. De lectura tiene uno
+     solo: la vista stock_catalogo, que son dos columnas (el nombre de la
+     tarjeta y cuanto queda) y es la que apaga aqui los sabores agotados. No
+     puede leer la tabla de pedidos, ni inventario, ni ventas, ni caja, ni
+     borrar ni cambiar nada: eso lo decide la politica de RLS, no el secreto
+     de la llave. Ver add_pedidos_catalogo.sql y add_stock_catalogo.sql en el
+     proyecto de inventario.
 
      La llave secreta vive solo en el servidor de la app y nunca pasa por
      aqui. */
@@ -2003,6 +2071,17 @@
   Array.prototype.forEach.call(document.querySelectorAll('.item'), function(el){
     var precioEl = el.querySelector('.precio');
     if (!precioEl) return;
+
+    /* El sello de agotado se cuelga ya hecho y escondido, al lado de la
+       etiqueta. Lo pone el script y no el HTML porque esto no es un dato de
+       la tarjeta: cambia cada dia y lo dice el inventario. */
+    var etiquetaEl = el.querySelector('.etiqueta');
+    if (etiquetaEl && etiquetaEl.parentNode){
+      var sello = document.createElement('div');
+      sello.className = 'sello';
+      sello.textContent = 'Agotado';
+      etiquetaEl.parentNode.insertBefore(sello, etiquetaEl.nextSibling);
+    }
     var unidadEl = el.querySelector('.precio .unidad');
     var fuente   = el.querySelector('picture source');
     /* La escala propia de las que van por unidad, del mismo data- con que se
@@ -2017,7 +2096,12 @@
       mayor:      mayorEl ? parseInt(mayorEl.getAttribute('data-precio'), 10) || 0 : 0,
       mayorDesde: mayorEl ? parseInt(mayorEl.getAttribute('data-desde'),  10) || 0 : 0,
       foto: fuente ? fuente.getAttribute('srcset') : '',
-      cantidad: 0
+      cantidad: 0,
+      /* La tarjeta, para poder apagarla cuando el sabor se acabe. Solo se le
+         pone y le quita una clase: el sello ya esta puesto y escondido, y la
+         ficha se entera mirando esa misma clase. */
+      tarjeta: el,
+      tope: SIN_TOPE
     });
   });
 
@@ -2026,7 +2110,7 @@
     var salvado = JSON.parse(localStorage.getItem(LLAVE) || '{}');
     productos.forEach(function(p){
       var n = parseInt(salvado[p.nombre], 10);
-      if (n > 0) p.cantidad = Math.min(n, 999);
+      if (n > 0) p.cantidad = Math.min(n, SIN_TOPE);
     });
   } catch (e) {}
 
@@ -2107,12 +2191,13 @@
         '<div class="fp-abajo">' +
           '<div class="paso">' +
             '<button type="button" class="menos" aria-label="Quitar uno de ' + p.nombre + '">&minus;</button>' +
-            '<input class="cant" type="number" min="0" max="999" inputmode="numeric" value="' +
+            '<input class="cant" type="number" min="0" max="' + p.tope + '" inputmode="numeric" value="' +
               p.cantidad + '" aria-label="Cantidad de ' + p.nombre + '">' +
             '<button type="button" class="mas" aria-label="Agregar uno de ' + p.nombre + '">+</button>' +
           '</div>' +
           '<div class="fp-sub">' + pesos(0) + '</div>' +
         '</div>' +
+        '<div class="fp-resto"></div>' +
       '</div>';
     contenedor.appendChild(fila);
 
@@ -2120,20 +2205,27 @@
     p.campo = fila.querySelector('.cant');
     p.sub   = fila.querySelector('.fp-sub');
     p.marca = fila.querySelector('.fp-nombre span');
+    p.resto = fila.querySelector('.fp-resto');
+    p.menos = fila.querySelector('.menos');
+    p.mas   = fila.querySelector('.mas');
 
-    fila.querySelector('.menos').addEventListener('click', function(){
+    p.menos.addEventListener('click', function(){
       p.cantidad = Math.max(0, p.cantidad - 1);
       p.campo.value = p.cantidad;
       recalcular();
     });
-    fila.querySelector('.mas').addEventListener('click', function(){
-      p.cantidad = Math.min(999, p.cantidad + 1);
+    p.mas.addEventListener('click', function(){
+      p.cantidad = topar(p, p.cantidad + 1);
       p.campo.value = p.cantidad;
       recalcular();
     });
     p.campo.addEventListener('input', function(){
-      var n = parseInt(p.campo.value, 10);
-      p.cantidad = (isNaN(n) || n < 0) ? 0 : Math.min(999, n);
+      var escrito = parseInt(p.campo.value, 10);
+      p.cantidad = topar(p, escrito);
+      /* Si escribio mas de lo que hay, el campo se corrige de una. Dejarlo
+         para el blur alcanzaba cuando el tope era 999 y nunca se tocaba; con
+         "quedan 5" el tendero veria escrito un 6 que por detras ya valia 5. */
+      if (escrito > p.tope) p.campo.value = p.cantidad;
       recalcular();
     });
     // si quedo vacio o con basura, se normaliza al salir del campo
@@ -2442,7 +2534,7 @@
       try { copia = JSON.parse(localStorage.getItem(LLAVE + '-copia') || '{}'); } catch (e) {}
       productos.forEach(function(p){
         var n = parseInt(copia[p.nombre], 10);
-        p.cantidad = n > 0 ? Math.min(n, 999) : 0;
+        p.cantidad = n > 0 ? Math.min(n, p.tope) : 0;
         if (p.campo) p.campo.value = p.cantidad;
       });
       recalcular();
@@ -2455,13 +2547,100 @@
      parpadeo de la pantalla justo despues del toque. */
   document.addEventListener('visibilitychange', function(){
     if (document.visibilityState !== 'visible') return;
+
+    /* El catalogo se queda abierto horas en el celular del tendero. Al volver
+       a mirarlo se pregunta otra vez, que es el momento en que importa: justo
+       antes de mandar el pedido. */
+    cargarDisponible();
+
     var cuando = 0;
     try { cuando = parseInt(localStorage.getItem(LLAVE + '-enviado'), 10) || 0; } catch (e) {}
     if (cuando && Date.now() - cuando > 3000) cerrarPedidoEnviado();
   });
 
+  /* --- lo que de verdad hay ----------------------------------------------
+     El catalogo pregunta por lo disponible a la vista stock_catalogo, que es
+     lo unico que la llave publicable puede leer (ver add_stock_catalogo.sql
+     en el proyecto de inventario). Responde el nombre de la tarjeta y cuanto
+     queda, en la misma unidad que cobra la tarjeta: docenas en las de docena,
+     unidades en Mega, Megaton y los Fosforitos. Por eso aqui no hay que
+     convertir nada.
+
+     Es a la buena, igual que el guardado del pedido: si no hay senal o la
+     peticion falla, el catalogo se queda como estaba y se puede pedir de
+     todo. Un tope que no llego no puede dejar al tendero sin pedir.
+
+     Y aunque llegue, el tope es cortesia y no candado: entre que la pagina
+     carga y el tendero manda el mensaje, el carro puede haberse llevado esas
+     docenas. Por eso el pedido sigue saliendo sujeto a confirmacion. */
+  function topar(p, n){
+    if (isNaN(n) || n < 0) return 0;
+    return Math.min(n, p.tope);
+  }
+
+  function pintarTope(p){
+    var agotado = p.tope === 0;
+
+    if (p.tarjeta) p.tarjeta.classList.toggle('agotado', agotado);
+
+    if (!p.fila) return;
+    p.fila.classList.toggle('agotado', agotado);
+    p.campo.max      = p.tope;
+    p.campo.disabled = agotado;
+    p.menos.disabled = agotado;
+    p.mas.disabled   = agotado;
+
+    /* Decirle "Quedan 5" es lo que explica por que el mas ya no sube. Un tope
+       que frena sin decir nada parece una pagina mala. */
+    p.resto.textContent =
+      agotado                  ? 'Agotado' :
+      p.tope > AVISAR_DESDE    ? ''        :
+      p.tope === 1             ? 'Queda 1' : 'Quedan ' + p.tope;
+  }
+
+  function cargarDisponible(){
+    if (!BASE_URL || !BASE_LLAVE) return;
+
+    fetch(BASE_URL + '/rest/v1/stock_catalogo?select=sabor,disponible', {
+      cache: 'no-store',
+      headers: {
+        'apikey': BASE_LLAVE,
+        'Authorization': 'Bearer ' + BASE_LLAVE
+      }
+    })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(filas){
+        if (!filas || !filas.length) return;
+
+        var hay = {};
+        filas.forEach(function(f){
+          var n = parseInt(f.disponible, 10);
+          hay[String(f.sabor).trim()] = (isNaN(n) || n < 0) ? 0 : n;
+        });
+
+        productos.forEach(function(p){
+          /* Un sabor del que la vista no dice nada se queda sin tope. Vale
+             mas dejar pedir y confirmarlo despues que apagar una tarjeta
+             porque al inventario le falta la fila o le cambiaron el nombre. */
+          p.tope = hay.hasOwnProperty(p.nombre) ? hay[p.nombre] : SIN_TOPE;
+
+          /* Lo que habia marcado de antes se recorta a lo que hay. Baja solo,
+             pero no en silencio: la fila queda diciendo cuanto queda. */
+          if (p.cantidad > p.tope){
+            p.cantidad = p.tope;
+            if (p.campo) p.campo.value = p.cantidad;
+          }
+          pintarTope(p);
+        });
+
+        recalcular();
+      })
+      .catch(function(){});
+  }
+
   btnCarrito.hidden = false;
   recalcular();
+  cargarDisponible();
 
   /* Si cerro el navegador alla y volvio mucho despues, la marca sigue puesta
      y se limpia al abrir. */
